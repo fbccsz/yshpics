@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento PIX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center">
+        
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Quase lá!</h2>
+        <p class="text-gray-500 mb-6">Finalize o pagamento para liberar suas fotos em alta resolução.</p>
+
+        <div class="bg-green-50 rounded-xl p-4 mb-6 border border-green-100">
+            <span class="block text-sm text-green-700 uppercase tracking-wider font-semibold">Total a Pagar</span>
+            <span class="text-4xl font-extrabold text-green-600">R$ {{ valor_total }}</span>
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <img src="data:image/jpeg;base64,{{ qr_code_base64 }}" alt="QR Code PIX" class="w-48 h-48 rounded-lg shadow-sm border border-gray-200">
+        </div>
+
+        <div class="text-left mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">PIX Copia e Cola:</label>
+            <div class="flex relative">
+                <input type="text" id="pix-codigo" readonly value="{{ copia_cola }}" 
+                       class="w-full bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 pr-20">
+                <button onclick="copiarPix()" 
+                        class="absolute top-0 right-0 h-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-r-lg text-sm px-4 py-2 transition-colors">
+                    Copiar
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Aguardando confirmação do pagamento...</span>
+        </div>
+
+    </div>
+
+    <script>
+    // Impede o usuário de voltar para a tela anterior pelo botão do navegador
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+            window.history.go(1);
+        };
+        // 1. Variável global: Injetamos o ID do pedido que o Jinja2 passou para o HTML
+        // Corrigido: proteger para não quebrar JS se pedido_id não estiver definido
+        const pedidoId = {{ pedido_id | tojson | safe }};
+
+        // 2. Função acionada APENAS quando o cliente clica no botão "Copiar"
+        function copiarPix() {
+            var copyText = document.getElementById("pix-codigo");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // Para mobile
+            navigator.clipboard.writeText(copyText.value);
+            
+            alert("Código PIX copiado com sucesso!");
+        }
+
+        // 3. Função independente para verificar o status do pagamento no banco
+        async function checarStatusPagamento() {
+            try {
+                // Faz uma requisição silenciosa à nossa API
+                const resposta = await fetch(`/api/status-pagamento/${pedidoId}`);
+                const dados = await resposta.json();
+
+                // Se o Webhook do Mercado Pago já alterou o estado no banco de dados...
+                if (dados.status === "Pago") {
+                    // Muda o texto na interface para dar um feedback visual imediato
+                    document.querySelector('.text-gray-500.space-x-2 span').innerText = "Pagamento confirmado! Liberando fotos...";
+                    
+                    // Esconde o ícone de carregamento (spinner)
+                    const spinner = document.querySelector('.animate-spin');
+                    if (spinner) spinner.classList.add('hidden'); 
+                    
+                    // Aguarda 2 segundos para o cliente ler a mensagem e redireciona
+                    setTimeout(() => {
+                        window.location.href = `/sucesso/${pedidoId}`; 
+                    }, 2000);
+                }
+                else if (dados.status === "Cancelado") {
+                    alert("O tempo para este PIX expirou ou foi cancelado.");
+                    window.location.href = "/"; // Volta para a galeria
+                }
+            } catch (erro) {
+                console.error("Erro ao verificar o estado:", erro);
+            }
+        }
+
+        // 4. Inicia o Polling automaticamente: executa a função a cada 5 segundos.
+        // Como está solto aqui embaixo, ele começa a rodar assim que a página carrega!
+        const intervaloInspecao = setInterval(checarStatusPagamento, 5000);
+        
+    </script>
+</body>
+</html>

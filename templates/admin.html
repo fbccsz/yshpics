@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Upload de Fotos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Novo Álbum Fotográfico</h2>
+        
+        <form id="form-upload" onsubmit="enviarFotos(event)" class="space-y-6">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Título do Álbum</label>
+                    <input type="text" id="titulo" required placeholder="Ex: Formatura Direito" 
+                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Preço Web (Redes Sociais)</label>
+                    <input type="number" id="preco_baixa" required step="0.01" value="5.00" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Preço Original (Impressão)</label>
+                    <input type="number" id="preco_alta" required step="0.01" value="15.00" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Selecione as Fotos (Alta Resolução)</label>
+                <input type="file" id="arquivos" multiple accept="image/*" required
+                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <button type="submit" id="btn-enviar" 
+                    class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center">
+                Processar e Criar Álbum
+            </button>
+        </form>
+
+        <div id="resultado" class="mt-6 hidden bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-center">
+            </div>
+    </div>
+
+    <script>
+        async function enviarFotos(event) {
+            event.preventDefault(); // Impede a página de recarregar
+            
+            const btn = document.getElementById('btn-enviar');
+            const resultadoDiv = document.getElementById('resultado');
+            const arquivosInput = document.getElementById('arquivos');
+            
+            btn.disabled = true;
+            btn.innerText = "Processando imagens... Pode levar alguns segundos.";
+            resultadoDiv.classList.add('hidden');
+
+            // Prepara os dados do formulário (multipar/form-data)
+            const formData = new FormData();
+            formData.append('titulo_album', document.getElementById('titulo').value);
+            formData.append('preco_baixa', document.getElementById('preco_baixa').value);
+            formData.append('preco_alta', document.getElementById('preco_alta').value);
+            
+            for (let i = 0; i < arquivosInput.files.length; i++) {
+                formData.append('fotos', arquivosInput.files[i]);
+            }
+
+            try {
+                const resposta = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const dados = await resposta.json();
+                
+                if (dados.sucesso) {
+                    resultadoDiv.classList.remove('hidden');
+                    resultadoDiv.innerHTML = `<strong>Sucesso!</strong> ${dados.mensagem} <br> <span class="text-sm mt-2 block text-gray-600">Link do álbum: ${dados.link_album} (Ainda precisamos criar essa rota!)</span>`;
+                    document.getElementById('form-upload').reset();
+                } else {
+                    alert("Erro no servidor.");
+                }
+            } catch (erro) {
+                console.error(erro);
+                alert("Falha na comunicação.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Processar e Criar Álbum";
+            }
+        }
+    </script>
+</body>
+</html>

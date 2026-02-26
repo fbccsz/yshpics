@@ -1,0 +1,16 @@
+# Ambientes Virtuais
+venv/
+env/
+__pycache__/
+
+# Banco de dados local de teste
+*.db
+banco_fotos.db
+
+# Senhas e chaves
+.env
+*.pem
+
+# Pastas de Fotos (Crucial para não lotar o GitHub)
+fotos_alta_res_seguras/
+static/fotos_baixa_res/

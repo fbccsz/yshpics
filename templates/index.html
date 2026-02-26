@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ titulo_album }} | yshpics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .btn-azul { background-color: #3b82f6; color: #fff; transition: all 0.2s; }
+        .btn-azul:hover:not(:disabled) { background-color: #2563eb; transform: scale(1.02); }
+        
+        /* -webkit-touch-callout bloqueia o menu nativo do celular ao segurar a imagem */
+        .foto-item { transition: transform 0.3s, opacity 0.3s; -webkit-touch-callout: none; }
+        /* Corrigido: ring-width e ring-color não são propriedades CSS válidas. Use box-shadow para simular o efeito de anel. */
+        .selecionada {
+            box-shadow: 0 0 0 4px rgba(59,130,246, var(--tw-ring-opacity, 1));
+            --tw-ring-opacity: 1;
+        }
+        .selecionada .foto-item { opacity: 0.8; transform: scale(0.98); }
+
+        .marca-dagua-padrao {
+            position: absolute; inset: 0; pointer-events: none;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px);
+        }
+        
+        .marca-dagua-texto-container {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
+        }
+        .marca-dagua-texto { 
+            color: rgba(255,255,255,0.3); font-weight: 900; transform: rotate(-45deg); letter-spacing: 0.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        body { -webkit-user-select: none; user-select: none; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body oncontextmenu="return false;" class="bg-gray-50 text-gray-900 font-sans flex flex-col min-h-screen">
+
+    <div id="tela-galeria" class="flex flex-col min-h-screen w-full">
+        
+        <header id="main-header" class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 h-16 flex items-center justify-center shadow-sm transition-colors duration-300">
+            <a href="/" id="btn-voltar" class="absolute left-4 p-2 text-gray-400 hover:text-blue-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+            <h1 id="header-title" class="text-lg font-black uppercase tracking-tight truncate max-w-[70%]">{{ titulo_album }}</h1>
+
+            <button id="btn-fechar-multi" onclick="sairMultiSelecao()" class="hidden absolute left-4 p-2 text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="header-multi-info" class="hidden text-lg font-black text-blue-600 tracking-tight">
+                SELEÇÃO RÁPIDA
+            </div>
+        </header>
+
+        <main class="w-full max-w-7xl mx-auto p-4 pb-32 flex-grow">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4" id="galeria-container">
+                {% for foto in fotos %}
+                
+                <div class="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 container-foto aspect-square bg-gray-100 ring-0 transition-all" 
+                     data-id="{{ foto.id }}" data-src="{{ foto.caminho_baixa_res }}" data-preco-baixa="{{ foto.preco_baixa }}" data-preco-alta="{{ foto.preco_alta }}">
+                    
+                    <img src="{{ foto.caminho_baixa_res }}" draggable="false" class="foto-item w-full h-full object-cover cursor-pointer" 
+                         onpointerdown="iniciarLongPress(this, event)"
+                         onpointerup="cancelarLongPress()"
+                         onpointerleave="cancelarLongPress()"
+                         onclick="handleFotoClick(this, '{{ foto.caminho_baixa_res }}', event)">
+                    
+                    <div class="marca-dagua-padrao opacity-60 group-hover:opacity-100 transition-opacity"></div>
+
+                    <button onclick="handleCheckClick(this, event)" class="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/40 flex items-center justify-center transition-all duration-200 z-10 check-btn hover:bg-blue-500 hover:border-transparent active:scale-95">
+                        <svg class="w-6 h-6 text-white opacity-0 transition-opacity scale-75" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                </div>
+
+                {% endfor %}
+            </div>
+        </main>
+
+        <div class="fixed bottom-0 left-0 w-full p-4 z-30 pointer-events-none" id="barra-carrinho-galeria">
+            <div class="max-w-3xl mx-auto bg-white border border-blue-100 rounded-2xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex justify-between items-center pointer-events-auto ring-1 ring-black/5">
+                <div>
+                    <span class="block text-sm font-black text-gray-900 uppercase tracking-wider"><span id="qtd-galeria" class="text-blue-600">0</span> fotos escolhidas</span>
+                    <span class="block text-xs text-gray-500 font-medium mt-0.5">Defina o formato na próxima etapa</span>
+                </div>
+                <button id="btn-avancar" disabled onclick="irParaRevisao()" class="btn-azul disabled:bg-gray-200 disabled:text-gray-400 font-black py-3 px-8 rounded-xl flex items-center gap-2 text-sm uppercase tracking-wider shadow-sm">
+                    Avançar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tela-revisao" class="hidden flex-col min-h-screen w-full bg-gray-50 z-50 absolute top-0 left-0 pb-32 fade-in">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 h-16 flex items-center shadow-sm">
+            <button onclick="voltarParaGaleria()" class="absolute left-4 p-2 text-gray-600 hover:text-blue-500 transition-colors flex items-center gap-1 font-bold text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Voltar
+            </button>
+            <h2 class="mx-auto font-black uppercase text-gray-900 tracking-tight">Revisar Pedido</h2>
+        </header>
+
+        <main class="w-full max-w-3xl mx-auto p-4 flex flex-col gap-4" id="lista-revisao">
+            </main>
+
+        <div class="fixed bottom-0 left-0 w-full p-4 z-30">
+            <div class="max-w-3xl mx-auto bg-white border border-blue-100 rounded-2xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.2)] flex justify-between items-center ring-1 ring-black/5">
+                <div>
+                    <span class="block text-gray-500 text-xs font-bold uppercase tracking-wider">Total a Pagar</span>
+                    <span class="block text-2xl font-black text-gray-900 leading-none mt-0.5">R$ <span id="total-revisao">0,00</span></span>
+                </div>
+                <button id="btn-gerar-pix" onclick="gerarPixFinal()" class="bg-green-500 hover:bg-green-600 text-white font-black py-3 px-8 rounded-xl flex items-center gap-2 text-sm uppercase tracking-wider shadow-md transition-all active:scale-95">
+                    Pagar via PIX
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox" class="fixed inset-0 bg-black/95 z-[70] hidden flex-col justify-center items-center opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+        <button onclick="fecharModal()" class="absolute top-4 right-4 text-white/80 hover:text-white p-2 z-50 bg-white/10 rounded-full transition-colors">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="relative w-full h-full p-4 md:p-8 flex items-center justify-center pointer-events-none">
+            <div class="relative flex items-center justify-center w-auto h-auto max-w-full max-h-full pointer-events-auto shadow-2xl">
+                <img id="img-modal" src="" draggable="false" class="max-w-full max-h-full object-contain rounded-lg select-none bg-[#1a1a1a]" oncontextmenu="return false;">
+                <div class="marca-dagua-padrao"></div>
+                <div class="marca-dagua-texto-container"><span class="marca-dagua-texto text-5xl md:text-8xl">PROVA</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fotosSelecionadas = {}; 
+        let modoMultiSelecao = false;
+        let longPressTimer;
+        let isLongPressing = false;
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c')) e.preventDefault();
+            if (e.key === 'Escape') { fecharModal(); sairMultiSelecao(); }
+        });
+
+        // ==========================================
+        // 1. MÁQUINA DE ESTADO: MODO MULTI-SELEÇÃO E TOQUES
+        // ==========================================
+        function iniciarLongPress(imgElement, event) {
+            // Ignora se for clique com botão direito no mouse
+            if (event.pointerType === 'mouse' && event.button !== 0) return; 
+            
+            isLongPressing = false;
+            longPressTimer = setTimeout(() => {
+                isLongPressing = true;
+                if (navigator.vibrate) navigator.vibrate(50); // Vibra no celular
+                
+                if (!modoMultiSelecao) {
+                    entrarMultiSelecao();
+                    // Seleciona automaticamente a foto que foi segurada (se já não estiver)
+                    const container = imgElement.closest('.container-foto');
+                    const fotoId = container.getAttribute('data-id');
+                    if (!fotosSelecionadas[fotoId]) {
+                        toggleSelecao(container);
+                    }
+                }
+            }, 450); // 450ms é o tempo perfeito para ativar
+        }
+
+        function cancelarLongPress() {
+            clearTimeout(longPressTimer);
+        }
+
+        function handleFotoClick(imgElement, src, event) {
+            // Se o usuário estava segurando o dedo, o "clique" ao soltar é cancelado
+            if (isLongPressing) {
+                event.preventDefault();
+                event.stopPropagation();
+                isLongPressing = false; 
+                return;
+            }
+            
+            const container = imgElement.closest('.container-foto');
+            if (modoMultiSelecao) {
+                toggleSelecao(container); // No modo rápido, tocar na foto apenas seleciona
+            } else {
+                abrirModal(src); // No modo normal, abre ampliado
+            }
+        }
+
+        function handleCheckClick(btnElement, event) {
+            event.stopPropagation(); // Não deixa o clique vazar para a foto
+            const container = btnElement.closest('.container-foto');
+            toggleSelecao(container);
+        }
+
+        function toggleSelecao(container) {
+            const fotoId = container.getAttribute('data-id');
+            const btn = container.querySelector('.check-btn');
+
+            if (fotosSelecionadas[fotoId]) {
+                // Remover
+                delete fotosSelecionadas[fotoId];
+                container.classList.remove('selecionada');
+                btn.classList.remove('bg-blue-500', 'border-transparent');
+                btn.classList.add('bg-black/30', 'border-white/40');
+                btn.querySelector('svg').classList.remove('scale-100', 'opacity-100');
+                btn.querySelector('svg').classList.add('scale-75', 'opacity-0');
+            } else {
+                // Adicionar
+                fotosSelecionadas[fotoId] = {
+                    id: fotoId,
+                    src: container.getAttribute('data-src'),
+                    pBaixa: parseFloat(container.getAttribute('data-preco-baixa')),
+                    pAlta: parseFloat(container.getAttribute('data-preco-alta')),
+                    qualEscolhida: 'baixa' // Padrão
+                };
+                container.classList.add('selecionada');
+                btn.classList.add('bg-blue-500', 'border-transparent');
+                btn.classList.remove('bg-black/30', 'border-white/40');
+                btn.querySelector('svg').classList.remove('scale-75', 'opacity-0');
+                btn.querySelector('svg').classList.add('scale-100', 'opacity-100');
+            }
+
+            // Atualiza Botão Avançar
+            const totalQtd = Object.keys(fotosSelecionadas).length;
+            document.getElementById('qtd-galeria').innerText = totalQtd;
+            document.getElementById('btn-avancar').disabled = totalQtd === 0;
+
+            // Se desmarcou a última foto e estava na multi-seleção, volta ao normal
+            if (totalQtd === 0 && modoMultiSelecao) {
+                sairMultiSelecao();
+            }
+        }
+
+        function entrarMultiSelecao() {
+            modoMultiSelecao = true;
+            document.getElementById('btn-voltar').classList.add('hidden');
+            document.getElementById('header-title').classList.add('hidden');
+            document.getElementById('btn-fechar-multi').classList.remove('hidden');
+            document.getElementById('header-multi-info').classList.remove('hidden');
+            document.getElementById('main-header').classList.replace('bg-white', 'bg-blue-50');
+        }
+
+        function sairMultiSelecao() {
+            modoMultiSelecao = false;
+            document.getElementById('btn-voltar').classList.remove('hidden');
+            document.getElementById('header-title').classList.remove('hidden');
+            document.getElementById('btn-fechar-multi').classList.add('hidden');
+            document.getElementById('header-multi-info').classList.add('hidden');
+            document.getElementById('main-header').classList.replace('bg-blue-50', 'bg-white');
+        }
+
+        // ==========================================
+        // 2. TELA DE REVISÃO (Checkout)
+        // ==========================================
+        function irParaRevisao() {
+            document.getElementById('tela-galeria').classList.add('hidden');
+            document.getElementById('tela-revisao').classList.remove('hidden');
+            window.scrollTo(0, 0); 
+            renderizarListaRevisao();
+        }
+
+        function voltarParaGaleria() {
+            document.getElementById('tela-revisao').classList.add('hidden');
+            document.getElementById('tela-galeria').classList.remove('hidden');
+        }
+
+        function renderizarListaRevisao() {
+            const lista = document.getElementById('lista-revisao');
+            lista.innerHTML = '';
+
+            for (const id in fotosSelecionadas) {
+                const foto = fotosSelecionadas[id];
+                const cardHtml = `
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center">
+                        <div class="relative w-24 h-24 flex-shrink-0">
+                            <img src="${foto.src}" class="w-full h-full object-cover rounded-xl border border-gray-200">
+                            <button onclick="removerNaRevisao('${id}')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <h4 class="font-bold text-xs text-gray-400 uppercase tracking-wider mb-2">Formato de Download:</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div onclick="mudarQualidadeRevisao('${id}', 'baixa')" class="cursor-pointer border-2 rounded-xl p-2 text-center transition-all ${foto.qualEscolhida === 'baixa' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 bg-white hover:border-blue-300'}">
+                                    <span class="block text-xs font-black ${foto.qualEscolhida === 'baixa' ? 'text-blue-700' : 'text-gray-600'}">Redes Sociais</span>
+                                    <span class="block text-sm font-bold mt-1 ${foto.qualEscolhida === 'baixa' ? 'text-blue-900' : 'text-gray-900'}">R$ ${foto.pBaixa.toFixed(2).replace('.', ',')}</span>
+                                </div>
+                                <div onclick="mudarQualidadeRevisao('${id}', 'alta')" class="cursor-pointer border-2 rounded-xl p-2 text-center transition-all ${foto.qualEscolhida === 'alta' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 bg-white hover:border-blue-300'}">
+                                    <span class="block text-xs font-black ${foto.qualEscolhida === 'alta' ? 'text-blue-700' : 'text-gray-600'}">Original (Imp.)</span>
+                                    <span class="block text-sm font-bold mt-1 ${foto.qualEscolhida === 'alta' ? 'text-blue-900' : 'text-gray-900'}">R$ ${foto.pAlta.toFixed(2).replace('.', ',')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                lista.insertAdjacentHTML('beforeend', cardHtml);
+            }
+            
+            recalcularTotalRevisao();
+            if(Object.keys(fotosSelecionadas).length === 0) voltarParaGaleria();
+        }
+
+        function mudarQualidadeRevisao(id, novaQualidade) {
+            fotosSelecionadas[id].qualEscolhida = novaQualidade;
+            renderizarListaRevisao(); 
+        }
+
+        function removerNaRevisao(id) {
+            const container = document.querySelector(`.container-foto[data-id="${id}"]`);
+            if (container) {
+                toggleSelecao(container); // Remove do objeto e da Galeria
+            } else {
+                delete fotosSelecionadas[id];
+            }
+            renderizarListaRevisao();
+        }
+
+        function recalcularTotalRevisao() {
+            let total = 0;
+            for (const id in fotosSelecionadas) {
+                const foto = fotosSelecionadas[id];
+                total += foto.qualEscolhida === 'alta' ? foto.pAlta : foto.pBaixa;
+            }
+            document.getElementById('total-revisao').innerText = total.toFixed(2).replace('.', ',');
+        }
+
+        // ==========================================
+        // 3. COMUNICAÇÃO FINAL (PIX)
+        // ==========================================
+        async function gerarPixFinal() {
+            const btn = document.getElementById('btn-gerar-pix');
+            const textoOriginal = btn.innerText;
+            btn.innerHTML = 'Gerando PIX...';
+            btn.disabled = true;
+
+            const itensPedido = Object.values(fotosSelecionadas).map(f => ({
+                foto_id: parseInt(f.id),
+                qualidade: f.qualEscolhida
+            }));
+
+            const dadosPedido = { itens: itensPedido, nome_cliente: "Visitante", email_cliente: "sem@email.com" };
+
+            try {
+                const resposta = await fetch('/criar-pedido', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosPedido)
+                });
+                const resultado = await resposta.json();
+                
+                if (resultado.sucesso) window.location.replace(`/pagamento/${resultado.pedido_id}`);
+                else { alert("Erro ao gerar PIX."); btn.innerHTML = textoOriginal; btn.disabled = false; }
+            } catch (erro) {
+                alert("Erro de conexão."); btn.innerHTML = textoOriginal; btn.disabled = false; 
+            }
+        }
+
+        // ==========================================
+        // 4. LIGHTBOX
+        // ==========================================
+        function abrirModal(src) {
+            const modal = document.getElementById('lightbox');
+            document.getElementById('img-modal').src = src;
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 50);
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('lightbox');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    </script>
+</body>
+</html>
