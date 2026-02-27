@@ -82,6 +82,45 @@
 
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in-up { animation: fadeInUp 0.4s ease-out both; }
+
+        /* Site switcher */
+        .site-switcher-dropdown {
+            display: none; position: absolute; top: calc(100% + 10px); left: 0;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12); padding: 6px; min-width: 180px; z-index: 100;
+        }
+        .site-switcher-dropdown.open { display: block; animation: fadeInUp 0.18s ease-out both; }
+        .switcher-item {
+            display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+            border-radius: 9px; cursor: pointer; font-size: 0.82rem; font-weight: 700;
+            color: #374151; transition: background 0.15s;
+        }
+        .switcher-item:hover { background: #f3f4f6; }
+        .switcher-item.active { background: #eff6ff; color: #1d4ed8; }
+        .switcher-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        /* Page transition overlay */
+        #page-transition {
+            position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        #page-transition .pt-curtain {
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1e1e2e 50%, #0a0a1a 100%);
+            transform: translateY(100%);
+            transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        #page-transition.active .pt-curtain { transform: translateY(0); }
+        #page-transition .pt-brand {
+            position: relative; z-index: 1; text-align: center;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.3s ease 0.3s, transform 0.3s ease 0.3s;
+        }
+        #page-transition.active .pt-brand { opacity: 1; transform: translateY(0); }
+        #page-transition .pt-brand span.pt-y { color: #fff; font-size: 2rem; font-weight: 900; font-style: italic; letter-spacing: -0.04em; }
+        #page-transition .pt-brand span.pt-dev { color: #6366f1; }
+        #page-transition .pt-brand p { color: #6b7280; font-size: 0.75rem; margin-top: 6px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -89,9 +128,24 @@
     <!-- Navbar -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-            <a href="/" class="flex-shrink-0 font-black text-3xl italic tracking-tight">
-                <span class="text-black">ysh</span><span class="text-blue-500">pics</span>
-            </a>
+            <div class="relative flex-shrink-0" id="logo-wrapper">
+                <button onclick="toggleSwitcher(event)" class="font-black text-3xl italic tracking-tight flex items-center gap-1 select-none focus:outline-none group" aria-label="Trocar site">
+                    <span class="text-black">ysh</span><span class="text-blue-500">pics</span>
+                    <svg class="w-3.5 h-3.5 text-gray-400 mt-1 transition-transform duration-200 group-aria-expanded:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="switcher-arrow"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="site-switcher-dropdown" id="site-dropdown">
+                    <div class="switcher-item active" onclick="closeSwitcher()">
+                        <span class="switcher-dot" style="background:#3b82f6;"></span>
+                        <span>yshpics</span>
+                        <svg class="w-3.5 h-3.5 ml-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div class="switcher-item" onclick="goToYshdev()">
+                        <span class="switcher-dot" style="background:#6366f1;"></span>
+                        <span>yshdev.me</span>
+                        <svg class="w-3 h-3 ml-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </div>
+                </div>
+            </div>
             <div class="flex items-center gap-3">
                 <a href="/cadastro" class="text-sm font-semibold border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
                     Sou fotógrafo
@@ -216,7 +270,7 @@
             <p class="text-gray-400 text-xs font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
             <a href="https://instagram.com/yshpics" target="_blank" rel="noopener"
                class="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors text-sm font-bold">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 @yshpics
             </a>
         </div>
@@ -246,6 +300,41 @@
                 semResultados.classList.toggle('hidden', visiveis > 0);
             }
         }
+
+        // Site switcher
+        function toggleSwitcher(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('site-dropdown');
+            const arrow = document.getElementById('switcher-arrow');
+            const isOpen = dropdown.classList.contains('open');
+            dropdown.classList.toggle('open', !isOpen);
+            arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+        }
+        function closeSwitcher() {
+            document.getElementById('site-dropdown').classList.remove('open');
+            document.getElementById('switcher-arrow').style.transform = '';
+        }
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('logo-wrapper').contains(e.target)) closeSwitcher();
+        });
+
+        // Page transition to yshdev.me
+        function goToYshdev() {
+            closeSwitcher();
+            const overlay = document.getElementById('page-transition');
+            overlay.style.pointerEvents = 'all';
+            overlay.classList.add('active');
+            setTimeout(() => { window.location.href = 'https://yshdev.me'; }, 650);
+        }
     </script>
+
+    <!-- Page Transition Overlay -->
+    <div id="page-transition">
+        <div class="pt-curtain"></div>
+        <div class="pt-brand">
+            <div><span class="pt-y">ysh</span><span class="pt-dev">dev</span><span class="pt-y">.me</span></div>
+            <p>Portfólio</p>
+        </div>
+    </div>
 </body>
 </html>
