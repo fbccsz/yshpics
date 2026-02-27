@@ -247,8 +247,77 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade</label>
-                                <input type="text" id="cidade" placeholder="Ex: Salvador/BA"
+                                <select id="cidade"
                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                                    <option value="">Selecione a cidade...</option>
+                                    <optgroup label="Bahia">
+                                        <option value="Salvador/BA">Salvador/BA</option>
+                                        <option value="Feira de Santana/BA">Feira de Santana/BA</option>
+                                        <option value="Vitória da Conquista/BA">Vitória da Conquista/BA</option>
+                                        <option value="Camaçari/BA">Camaçari/BA</option>
+                                        <option value="Itabuna/BA">Itabuna/BA</option>
+                                        <option value="Juazeiro/BA">Juazeiro/BA</option>
+                                        <option value="Lauro de Freitas/BA">Lauro de Freitas/BA</option>
+                                        <option value="Ilhéus/BA">Ilhéus/BA</option>
+                                        <option value="Jequié/BA">Jequié/BA</option>
+                                        <option value="Teixeira de Freitas/BA">Teixeira de Freitas/BA</option>
+                                        <option value="Barreiras/BA">Barreiras/BA</option>
+                                        <option value="Porto Seguro/BA">Porto Seguro/BA</option>
+                                        <option value="Paulo Afonso/BA">Paulo Afonso/BA</option>
+                                        <option value="Simões Filho/BA">Simões Filho/BA</option>
+                                        <option value="Alagoinhas/BA">Alagoinhas/BA</option>
+                                    </optgroup>
+                                    <optgroup label="São Paulo">
+                                        <option value="São Paulo/SP">São Paulo/SP</option>
+                                        <option value="Campinas/SP">Campinas/SP</option>
+                                        <option value="Santos/SP">Santos/SP</option>
+                                        <option value="Ribeirão Preto/SP">Ribeirão Preto/SP</option>
+                                        <option value="São Bernardo do Campo/SP">São Bernardo do Campo/SP</option>
+                                        <option value="Santo André/SP">Santo André/SP</option>
+                                        <option value="Osasco/SP">Osasco/SP</option>
+                                        <option value="Sorocaba/SP">Sorocaba/SP</option>
+                                    </optgroup>
+                                    <optgroup label="Rio de Janeiro">
+                                        <option value="Rio de Janeiro/RJ">Rio de Janeiro/RJ</option>
+                                        <option value="Niterói/RJ">Niterói/RJ</option>
+                                        <option value="Nova Iguaçu/RJ">Nova Iguaçu/RJ</option>
+                                        <option value="Duque de Caxias/RJ">Duque de Caxias/RJ</option>
+                                        <option value="São Gonçalo/RJ">São Gonçalo/RJ</option>
+                                    </optgroup>
+                                    <optgroup label="Minas Gerais">
+                                        <option value="Belo Horizonte/MG">Belo Horizonte/MG</option>
+                                        <option value="Contagem/MG">Contagem/MG</option>
+                                        <option value="Uberlândia/MG">Uberlândia/MG</option>
+                                        <option value="Betim/MG">Betim/MG</option>
+                                        <option value="Juiz de Fora/MG">Juiz de Fora/MG</option>
+                                    </optgroup>
+                                    <optgroup label="Nordeste">
+                                        <option value="Fortaleza/CE">Fortaleza/CE</option>
+                                        <option value="Recife/PE">Recife/PE</option>
+                                        <option value="Maceió/AL">Maceió/AL</option>
+                                        <option value="Natal/RN">Natal/RN</option>
+                                        <option value="Teresina/PI">Teresina/PI</option>
+                                        <option value="João Pessoa/PB">João Pessoa/PB</option>
+                                        <option value="São Luís/MA">São Luís/MA</option>
+                                        <option value="Aracaju/SE">Aracaju/SE</option>
+                                    </optgroup>
+                                    <optgroup label="Centro-Oeste e Norte">
+                                        <option value="Brasília/DF">Brasília/DF</option>
+                                        <option value="Goiânia/GO">Goiânia/GO</option>
+                                        <option value="Campo Grande/MS">Campo Grande/MS</option>
+                                        <option value="Cuiabá/MT">Cuiabá/MT</option>
+                                        <option value="Manaus/AM">Manaus/AM</option>
+                                        <option value="Belém/PA">Belém/PA</option>
+                                    </optgroup>
+                                    <optgroup label="Sul">
+                                        <option value="Curitiba/PR">Curitiba/PR</option>
+                                        <option value="Porto Alegre/RS">Porto Alegre/RS</option>
+                                        <option value="Florianópolis/SC">Florianópolis/SC</option>
+                                        <option value="Joinville/SC">Joinville/SC</option>
+                                        <option value="Londrina/PR">Londrina/PR</option>
+                                        <option value="Maringá/PR">Maringá/PR</option>
+                                    </optgroup>
+                                </select>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
