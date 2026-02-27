@@ -12,6 +12,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from sqlalchemy.orm import sessionmaker, Session
 from PIL import Image
@@ -146,18 +147,84 @@ async def landing_page(request: Request, db: Session = Depends(get_db)):
     albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
     return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns})
 
-@app.get("/{hash_url}", response_class=HTMLResponse)
-async def ver_album(request: Request, hash_url: str, db: Session = Depends(get_db)):
-    if hash_url in ["favicon.ico", "admin", "api"]:
-        raise HTTPException(status_code=404)
-        
-    album = db.query(Album).filter(Album.hash_url == hash_url).first()
-    if not album:
-        raise HTTPException(status_code=404)
-    
-    return templates.TemplateResponse("index.html", {
-        "request": request, "titulo_album": album.titulo, "fotos": album.fotos 
-    })
+
+# --- SCHEMAS ---
+class ItemPedidoIn(BaseModel):
+    foto_id: int
+    qualidade: str
+
+class CriarPedidoIn(BaseModel):
+    itens: List[ItemPedidoIn]
+    nome_cliente: str
+    email_cliente: str
+
+@app.post("/criar-pedido")
+async def criar_pedido(dados: CriarPedidoIn, db: Session = Depends(get_db)):
+    """Cria um pedido com múltiplos itens e gera o PIX."""
+    if not dados.itens:
+        return {"sucesso": False, "erro": "Nenhum item no pedido"}
+
+    primeira_foto = db.query(Foto).filter(Foto.id == dados.itens[0].foto_id).first()
+    if not primeira_foto:
+        return {"sucesso": False, "erro": "Foto não encontrada"}
+
+    fotografo = primeira_foto.album.fotografo
+    if not fotografo.mp_access_token:
+        return {"sucesso": False, "erro": "Fotógrafo não configurado para receber"}
+
+    valor_total = 0.0
+    fotos_itens = []
+    for item in dados.itens:
+        foto = db.query(Foto).filter(Foto.id == item.foto_id).first()
+        if not foto:
+            return {"sucesso": False, "erro": f"Foto {item.foto_id} não encontrada"}
+        preco = foto.preco_alta if item.qualidade == 'alta' else foto.preco_baixa
+        valor_total += preco
+        fotos_itens.append((foto, item.qualidade, preco))
+
+    valor_total = round(valor_total, 2)
+    sua_comissao = round(valor_total * 0.10, 2) if fotografo.plano_atual == "starter" else 0.0
+
+    cliente = db.query(Cliente).filter(Cliente.email == dados.email_cliente).first()
+    if not cliente:
+        cliente = Cliente(nome=dados.nome_cliente, email=dados.email_cliente)
+        db.add(cliente)
+        db.flush()
+
+    novo_pedido = Pedido(
+        cliente_id=cliente.id,
+        fotografo_id=fotografo.id,
+        valor_total=valor_total,
+        taxa_plataforma=sua_comissao
+    )
+    db.add(novo_pedido)
+    db.flush()
+
+    for foto, qualidade, preco in fotos_itens:
+        item_db = ItemPedido(pedido_id=novo_pedido.id, foto_id=foto.id, qualidade=qualidade, preco_cobrado=preco)
+        db.add(item_db)
+    db.commit()
+
+    pix = gerar_cobranca_pix(
+        valor_pedido=valor_total,
+        email_cliente=cliente.email,
+        nome_cliente=cliente.nome,
+        id_pedido_interno=novo_pedido.id,
+        token_fotografo=fotografo.mp_access_token,
+        taxa_plataforma=sua_comissao
+    )
+
+    if not pix["sucesso"]:
+        novo_pedido.status_pagamento = "Cancelado"
+        db.commit()
+        return {"sucesso": False, "erro": "Falha ao gerar o PIX no Mercado Pago"}
+
+    novo_pedido.pix_txid = pix["txid"]
+    novo_pedido.pix_copia_cola = pix["copia_cola"]
+    novo_pedido.pix_qr_code_base64 = pix["qr_code_img"]
+    db.commit()
+
+    return {"sucesso": True, "pedido_id": novo_pedido.id}
 
 @app.get("/pagamento/{pedido_id}", response_class=HTMLResponse)
 async def tela_pagamento(request: Request, pedido_id: int, db: Session = Depends(get_db)):
@@ -269,3 +336,16 @@ async def processar_upload(
 
     db.commit()
     return {"sucesso": True, "mensagem": f"{fotos_cadastradas} fotos processadas!", "link_album": f"/{novo_album.hash_url}"}
+
+@app.get("/{hash_url}", response_class=HTMLResponse)
+async def ver_album(request: Request, hash_url: str, db: Session = Depends(get_db)):
+    if hash_url == "favicon.ico":
+        raise HTTPException(status_code=404)
+
+    album = db.query(Album).filter(Album.hash_url == hash_url).first()
+    if not album:
+        raise HTTPException(status_code=404)
+
+    return templates.TemplateResponse("index.html", {
+        "request": request, "titulo_album": album.titulo, "fotos": album.fotos
+    })
