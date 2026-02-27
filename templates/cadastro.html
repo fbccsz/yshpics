@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro | yshpics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <a href="/" class="inline-block font-black text-4xl italic tracking-tight">
+                <span class="text-black">ysh</span><span class="text-blue-500">pics</span>
+            </a>
+            <p class="text-gray-500 text-sm mt-2">Crie sua conta de fotógrafo gratuitamente</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h1 class="text-2xl font-black text-gray-900 mb-2">Criar conta</h1>
+            <p class="text-sm text-gray-500 mb-6">Plano Starter gratuito — comece a vender hoje.</p>
+
+            {% if erro %}
+            <div class="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                {{ erro }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/cadastro" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nome completo</label>
+                    <input type="text" name="nome" required autocomplete="name"
+                           placeholder="Seu nome"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">E-mail</label>
+                    <input type="email" name="email" required autocomplete="email"
+                           placeholder="seu@email.com"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Senha</label>
+                    <input type="password" name="senha" required autocomplete="new-password" minlength="6"
+                           placeholder="Mínimo 6 caracteres"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white">
+                </div>
+
+                <!-- Plano Info -->
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-blue-900">Plano Starter — Grátis</p>
+                        <p class="text-xs text-blue-700 mt-0.5">10% de comissão por venda. Sem mensalidade. Comece agora.</p>
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-black text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 active:scale-95 transition-all text-sm tracking-wide">
+                    Criar minha conta
+                </button>
+            </form>
+
+            <p class="text-center text-sm text-gray-500 mt-6">
+                Já tem conta?
+                <a href="/login" class="text-blue-600 font-semibold hover:underline">Fazer login</a>
+            </p>
+        </div>
+
+        <p class="text-center text-xs text-gray-400 mt-6">
+            <a href="/" class="hover:text-gray-600 transition-colors">← Voltar para o início</a>
+        </p>
+    </div>
+
+</body>
+</html>

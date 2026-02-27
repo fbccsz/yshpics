@@ -1,15 +1,15 @@
 import os
 import io
 import uuid
+import hmac
+import hashlib
 import shutil
 import zipfile
-import secrets
 from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import FastAPI, Request, HTTPException, Depends, File, UploadFile, Form
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -23,9 +23,41 @@ from models import Pedido, Foto, Cliente, Album, ItemPedido, engine, Fotografo
 from pagamento_pix import gerar_cobranca_pix
 
 app = FastAPI()
-security = HTTPBasic()
 
-# --- CONFIGURAÇÕES DE PASTAS E BANCO ---
+# Chave secreta para assinar cookies de sessão. Defina SESSION_SECRET no .env em produção.
+SESSION_SECRET = os.getenv("SESSION_SECRET", os.urandom(32).hex())
+
+def _hash_senha(senha: str) -> str:
+    return hashlib.sha256(senha.encode("utf-8")).hexdigest()
+
+def _assinar_sessao(fotografo_id: int) -> str:
+    msg = str(fotografo_id).encode()
+    sig = hmac.new(SESSION_SECRET.encode(), msg, hashlib.sha256).hexdigest()
+    return f"{fotografo_id}.{sig}"
+
+def _verificar_sessao(token: str) -> "int | None":
+    try:
+        fid, sig = token.split(".", 1)
+        expected = hmac.new(SESSION_SECRET.encode(), fid.encode(), hashlib.sha256).hexdigest()
+        if hmac.compare_digest(sig, expected):
+            return int(fid)
+    except Exception:
+        pass
+    return None
+
+# ==========================================
+# HELPERS DE AUTENTICAÇÃO (Cookie-based)
+# ==========================================
+
+def get_fotografo_logado(request: Request, db: Session) -> "Fotografo | None":
+    """Retorna o fotógrafo logado ou None se não houver sessão válida."""
+    token = request.cookies.get("sessao_admin")
+    if not token:
+        return None
+    fotografo_id = _verificar_sessao(token)
+    if fotografo_id is None:
+        return None
+    return db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
 DIRETORIO_ALTA_RES = "./fotos_alta_res_seguras"
 DIRETORIO_BAIXA_RES = "./static/fotos_baixa_res"
 os.makedirs(DIRETORIO_ALTA_RES, exist_ok=True)
@@ -41,14 +73,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# --- AUTENTICAÇÃO BÁSICA ADMIN ---
-def verificar_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    correto_user = secrets.compare_digest(credentials.username, "y")
-    correto_pass = secrets.compare_digest(credentials.password, "sh")
-    if not (correto_user and correto_pass):
-        raise HTTPException(status_code=401, detail="Acesso Negado")
-    return credentials.username
 
 # ==========================================
 # ROTAS DO SAAS E CHECKOUT
@@ -146,6 +170,49 @@ async def mercado_pago_webhook(request: Request, db: Session = Depends(get_db)):
 async def landing_page(request: Request, db: Session = Depends(get_db)):
     albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
     return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns})
+
+# ==========================================
+# AUTENTICAÇÃO (Login / Cadastro / Logout)
+# ==========================================
+
+@app.get("/cadastro", response_class=HTMLResponse)
+async def tela_cadastro(request: Request):
+    return templates.TemplateResponse("cadastro.html", {"request": request})
+
+@app.post("/cadastro")
+async def processar_cadastro(request: Request, nome: str = Form(...), email: str = Form(...), senha: str = Form(...), db: Session = Depends(get_db)):
+    existente = db.query(Fotografo).filter(Fotografo.email == email).first()
+    if existente:
+        return templates.TemplateResponse("cadastro.html", {"request": request, "erro": "Este e-mail já está em uso."})
+
+    novo_fotografo = Fotografo(
+        nome=nome,
+        email=email,
+        senha_hash=_hash_senha(senha),
+        plano_atual="starter"
+    )
+    db.add(novo_fotografo)
+    db.commit()
+    return RedirectResponse(url="/login", status_code=303)
+
+@app.get("/login", response_class=HTMLResponse)
+async def tela_login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+async def processar_login(request: Request, email: str = Form(...), senha: str = Form(...), db: Session = Depends(get_db)):
+    fotografo = db.query(Fotografo).filter(Fotografo.email == email).first()
+    if not fotografo or not hmac.compare_digest(fotografo.senha_hash, _hash_senha(senha)):
+        return templates.TemplateResponse("login.html", {"request": request, "erro": "E-mail ou senha incorretos."})
+    resposta = RedirectResponse(url="/admin", status_code=303)
+    resposta.set_cookie("sessao_admin", _assinar_sessao(fotografo.id), httponly=True, samesite="lax")
+    return resposta
+
+@app.get("/logout")
+async def fazer_logout():
+    resposta = RedirectResponse(url="/login", status_code=303)
+    resposta.delete_cookie("sessao_admin")
+    return resposta
 
 
 # --- SCHEMAS ---
@@ -285,22 +352,46 @@ async def baixar_fotos_zip(pedido_id: int, db: Session = Depends(get_db)):
 # ADMIN E UPLOAD
 # ==========================================
 @app.get("/admin", response_class=HTMLResponse)
-async def tela_admin(request: Request, admin: str = Depends(verificar_admin)):
-    return templates.TemplateResponse("admin.html", {"request": request})
+async def tela_admin(request: Request, db: Session = Depends(get_db)):
+    fotografo = get_fotografo_logado(request, db)
+    if not fotografo:
+        return RedirectResponse(url="/login", status_code=303)
+
+    meus_albuns = db.query(Album).filter(Album.fotografo_id == fotografo.id).order_by(Album.data_evento.desc()).all()
+    pedidos_pagos = db.query(Pedido).filter(Pedido.fotografo_id == fotografo.id, Pedido.status_pagamento == "Pago").all()
+
+    total_vendido = sum(p.valor_total for p in pedidos_pagos)
+    minhas_taxas = sum(p.taxa_plataforma for p in pedidos_pagos)
+    lucro_limpo = total_vendido - minhas_taxas
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "fotografo": fotografo,
+        "albuns": meus_albuns,
+        "lucro": f"{lucro_limpo:.2f}".replace('.', ','),
+        "vendas": len(pedidos_pagos)
+    })
+
+@app.post("/api/configurar-mp")
+async def configurar_mp(request: Request, mp_token: str = Form(...), db: Session = Depends(get_db)):
+    fotografo = get_fotografo_logado(request, db)
+    if fotografo:
+        fotografo.mp_access_token = mp_token
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
 
 @app.post("/api/upload")
 async def processar_upload(
-    titulo_album: str = Form(...), 
+    request: Request,
+    titulo_album: str = Form(...),
     preco_baixa: float = Form(...),
     preco_alta: float = Form(...),
     fotos: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
-    admin: str = Depends(verificar_admin)
 ):
-    # ATENÇÃO: Temporário. Assumindo que o fotógrafo ID 1 é o dono do upload (ajustaremos isso com o painel real depois)
-    fotografo = db.query(Fotografo).first()
+    fotografo = get_fotografo_logado(request, db)
     if not fotografo:
-        return {"sucesso": False, "mensagem": "Nenhum fotógrafo cadastrado no banco."}
+        raise HTTPException(status_code=401, detail="Não autenticado")
 
     hash_album = str(uuid.uuid4())[:8]
     novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
