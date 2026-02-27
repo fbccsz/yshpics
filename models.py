@@ -58,7 +58,9 @@ class Album(Base):
     titulo = Column(String)
     hash_url = Column(String, unique=True)
     data_evento = Column(DateTime, default=datetime.utcnow)
-    
+    categoria = Column(String, nullable=True)   # Ex: Esportes, Festas, Formaturas
+    cidade = Column(String, nullable=True)       # Ex: Salvador/BA
+
     # Agora o álbum tem um dono!
     fotografo_id = Column(Integer, ForeignKey("fotografos.id"))
     fotografo = relationship("Fotografo", back_populates="albuns")
@@ -145,5 +147,11 @@ Base.metadata.create_all(bind=engine)
 with engine.connect() as conn:
     conn.execute(
         text("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pix_expiracao TIMESTAMP")
+    )
+    conn.execute(
+        text("ALTER TABLE albuns ADD COLUMN IF NOT EXISTS categoria VARCHAR")
+    )
+    conn.execute(
+        text("ALTER TABLE albuns ADD COLUMN IF NOT EXISTS cidade VARCHAR")
     )
     conn.commit()

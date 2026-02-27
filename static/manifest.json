@@ -1,0 +1,26 @@
+{
+  "name": "yshpics — Cobertura Fotográfica",
+  "short_name": "yshpics",
+  "description": "Encontre e baixe suas fotos de eventos em alta resolução.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["photography", "lifestyle"]
+}

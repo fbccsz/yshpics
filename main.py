@@ -5,8 +5,12 @@ import hmac
 import hashlib
 import shutil
 import zipfile
+import smtplib
+import tempfile
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 from fastapi import FastAPI, Request, HTTPException, Depends, File, UploadFile, Form
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, RedirectResponse
@@ -22,6 +26,14 @@ import mercadopago
 from models import Pedido, Foto, Cliente, Album, ItemPedido, PlataformaConfig, engine, Fotografo
 from pagamento_pix import gerar_cobranca_pix
 
+# Reconhecimento facial — importação opcional
+try:
+    import face_recognition as _fr
+    FACE_RECOGNITION_DISPONIVEL = True
+except ImportError:
+    _fr = None
+    FACE_RECOGNITION_DISPONIVEL = False
+
 app = FastAPI()
 
 # Chave secreta para assinar cookies de sessão. Defina SESSION_SECRET no .env em produção.
@@ -32,10 +44,51 @@ DOWNLOAD_DURACAO_DIAS = 7
 # E-mail do dono da plataforma — define acesso ao painel master em /owner
 OWNER_EMAIL = os.getenv("OWNER_EMAIL", "")
 
+# URL base pública (usada em links de e-mail e OG tags)
+BASE_URL = os.getenv("BASE_URL", "https://yshpics.com")
+
+# Configuração SMTP para notificações automáticas
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER)
+
 # Comissão e regras de preço
 COMISSAO_STARTER = 0.10          # 10% para plano starter
 COMISSAO_MINIMA = 0.50           # R$0,50 — abaixo disso não tentamos o split
 PRECO_MINIMO = 1.00              # R$1,00 — preço mínimo por foto
+
+def _enviar_email_download(email_cliente: str, nome_cliente: str, token_download: str, qtd_fotos: int):
+    """Envia e-mail com o link de download ao cliente após confirmação do pagamento."""
+    if not SMTP_HOST or not SMTP_USER:
+        return
+    try:
+        link = f"{BASE_URL}/baixar/{token_download}"
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "✅ Suas fotos estão prontas! — yshpics"
+        msg["From"] = f"yshpics <{SMTP_FROM}>"
+        msg["To"] = email_cliente
+
+        html = f"""
+        <div style="font-family:Inter,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1f2937;">
+          <h2 style="color:#3b82f6;font-size:1.5rem;margin:0 0 8px;">Pagamento confirmado! 🎉</h2>
+          <p style="margin:0 0 20px;color:#6b7280;">Olá, <strong>{nome_cliente}</strong>! Suas <strong>{qtd_fotos} foto{'s' if qtd_fotos != 1 else ''}</strong> em alta resolução estão prontas para download.</p>
+          <a href="{link}" style="display:inline-block;background:#3b82f6;color:#fff;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:1rem;">
+            Baixar minhas fotos (ZIP)
+          </a>
+          <p style="margin:24px 0 0;font-size:0.8rem;color:#9ca3af;">O link expira em 7 dias. Caso precise de ajuda, responda este e-mail.</p>
+        </div>
+        """
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(SMTP_FROM, email_cliente, msg.as_string())
+    except Exception as exc:
+        print(f"⚠️  Falha ao enviar e-mail para {email_cliente}: {exc}")
 
 def calcular_comissao(valor_total: float, plano: str) -> float:
     """Retorna a comissão da plataforma; 0 se o plano for pro ou o valor for pequeno demais."""
@@ -198,6 +251,13 @@ async def mercado_pago_webhook(request: Request, db: Session = Depends(get_db)):
                         pedido.status_pagamento = "Pago"
                         db.commit()
                         print(f"\n💰 SUCESSO! Pedido {pedido.id} foi pago.")
+                        # Notifica o cliente por e-mail com o link de download
+                        _enviar_email_download(
+                            email_cliente=pedido.cliente.email,
+                            nome_cliente=pedido.cliente.nome or "Cliente",
+                            token_download=pedido.token_download,
+                            qtd_fotos=len(pedido.itens),
+                        )
                     elif mp_status in ("cancelled", "expired"):
                         pedido.status_pagamento = "Expirado"
                         db.commit()
@@ -212,7 +272,8 @@ async def mercado_pago_webhook(request: Request, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request, db: Session = Depends(get_db)):
     albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
-    return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns})
+    fotografo = get_fotografo_logado(request, db)
+    return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns, "fotografo": fotografo})
 
 # ==========================================
 # AUTENTICAÇÃO (Login / Cadastro / Logout)
@@ -479,7 +540,7 @@ async def baixar_fotos_zip(token: str, db: Session = Depends(get_db)):
     memory_file.seek(0)
     return StreamingResponse(
         memory_file, media_type="application/zip", 
-        headers={"Content-Disposition": f"attachment; filename=yshpics_pedido_{pedido_id}.zip"}
+        headers={"Content-Disposition": f"attachment; filename=yshpics_pedido_{pedido.id}.zip"}
     )
 
 # ==========================================
@@ -528,6 +589,8 @@ async def processar_upload(
     titulo_album: str = Form(...),
     preco_baixa: float = Form(...),
     preco_alta: float = Form(...),
+    categoria: Optional[str] = Form(None),
+    cidade: Optional[str] = Form(None),
     fotos: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
@@ -539,7 +602,7 @@ async def processar_upload(
         raise HTTPException(status_code=400, detail=f"Preço mínimo por foto é R${PRECO_MINIMO:.2f}".replace('.', ','))
 
     hash_album = str(uuid.uuid4())[:8]
-    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
+    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id, categoria=categoria or None, cidade=cidade or None)
     db.add(novo_album)
     db.flush()
 
@@ -617,6 +680,8 @@ async def owner_upload(
     titulo_album: str = Form(...),
     preco_baixa: float = Form(...),
     preco_alta: float = Form(...),
+    categoria: Optional[str] = Form(None),
+    cidade: Optional[str] = Form(None),
     fotos: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
@@ -632,7 +697,7 @@ async def owner_upload(
         raise HTTPException(status_code=400, detail=f"Preço mínimo por foto é R${PRECO_MINIMO:.2f}".replace('.', ','))
 
     hash_album = str(uuid.uuid4())[:8]
-    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
+    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id, categoria=categoria or None, cidade=cidade or None)
     db.add(novo_album)
     db.flush()
 
@@ -791,6 +856,56 @@ async def ver_album(request: Request, hash_url: str, db: Session = Depends(get_d
     if not album:
         raise HTTPException(status_code=404)
 
+    capa_url = ""
+    if album.fotos:
+        capa_url = f"{BASE_URL}{album.fotos[0].caminho_baixa_res}"
+
     return templates.TemplateResponse("index.html", {
-        "request": request, "titulo_album": album.titulo, "fotos": album.fotos
+        "request": request,
+        "titulo_album": album.titulo,
+        "fotos": album.fotos,
+        "album": album,
+        "capa_url": capa_url,
+        "base_url": BASE_URL,
     })
+
+
+@app.post("/api/facial/{hash_url}")
+async def reconhecimento_facial(hash_url: str, selfie: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Recebe uma selfie e retorna os IDs das fotos do álbum onde o rosto aparece."""
+    if not FACE_RECOGNITION_DISPONIVEL:
+        return {"sucesso": False, "erro": "Reconhecimento facial não disponível no momento."}
+
+    album = db.query(Album).filter(Album.hash_url == hash_url).first()
+    if not album:
+        raise HTTPException(status_code=404)
+
+    # Decodifica a selfie
+    selfie_bytes = await selfie.read()
+    try:
+        selfie_img = _fr.load_image_file(io.BytesIO(selfie_bytes))
+        selfie_encodings = _fr.face_encodings(selfie_img)
+    except Exception:
+        return {"sucesso": False, "erro": "Não foi possível processar a selfie."}
+
+    if not selfie_encodings:
+        return {"sucesso": False, "erro": "Nenhum rosto detectado na selfie. Tente uma foto frontal com boa iluminação."}
+
+    selfie_encoding = selfie_encodings[0]
+    fotos_encontradas = []
+
+    for foto in album.fotos:
+        caminho = foto.caminho_baixa_res.lstrip("/")
+        if not os.path.exists(caminho):
+            continue
+        try:
+            img = _fr.load_image_file(caminho)
+            encodings = _fr.face_encodings(img)
+            if encodings:
+                results = _fr.compare_faces(encodings, selfie_encoding, tolerance=0.55)
+                if True in results:
+                    fotos_encontradas.append(foto.id)
+        except Exception:
+            continue
+
+    return {"sucesso": True, "fotos_com_voce": fotos_encontradas, "total": len(fotos_encontradas)}
