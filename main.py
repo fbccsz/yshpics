@@ -591,6 +591,7 @@ async def processar_upload(
     preco_alta: float = Form(...),
     categoria: Optional[str] = Form(None),
     cidade: Optional[str] = Form(None),
+    data_evento: Optional[str] = Form(None),
     fotos: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
@@ -601,8 +602,16 @@ async def processar_upload(
     if preco_baixa < PRECO_MINIMO or preco_alta < PRECO_MINIMO:
         raise HTTPException(status_code=400, detail=f"Preço mínimo por foto é R${PRECO_MINIMO:.2f}".replace('.', ','))
 
+    # Parse event date; fall back to today if missing or invalid
+    data_evento_dt = datetime.utcnow()
+    if data_evento:
+        try:
+            data_evento_dt = datetime.strptime(data_evento, "%Y-%m-%d")
+        except ValueError:
+            pass
+
     hash_album = str(uuid.uuid4())[:8]
-    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id, categoria=categoria or None, cidade=cidade or None)
+    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id, categoria=categoria or None, cidade=cidade or None, data_evento=data_evento_dt)
     db.add(novo_album)
     db.flush()
 
