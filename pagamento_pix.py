@@ -1,6 +1,9 @@
 import mercadopago
 import uuid
 import random
+from datetime import datetime, timedelta
+
+PIX_EXPIRACAO_MINUTOS = 30
 
 def gerar_cpf_valido():
     """Gera um CPF matematicamente válido para bypass no checkout."""
@@ -19,10 +22,12 @@ def _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_int
     else:
         first_name = "Cliente"
         last_name = "yshpics"
+    expiracao = datetime.utcnow() + timedelta(minutes=PIX_EXPIRACAO_MINUTOS)
     return {
         "transaction_amount": float(valor_pedido),
         "description": f"Compra de Fotos - Pedido #{id_pedido_interno}",
         "payment_method_id": "pix",
+        "date_of_expiration": expiracao.strftime("%Y-%m-%dT%H:%M:%S.000+00:00"),
         "payer": {
             "email": email_cliente if "@" in email_cliente else "cliente@yshpics.com",
             "first_name": first_name,
@@ -32,7 +37,7 @@ def _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_int
                 "number": gerar_cpf_valido()
             }
         }
-    }
+    }, expiracao
 
 def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_interno, token_fotografo, taxa_plataforma):
     """Gera cobrança PIX. Tenta com split de comissão; se falhar, tenta sem.
@@ -42,7 +47,7 @@ def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_inte
 
     sdk = mercadopago.SDK(token_fotografo)
 
-    payment_data = _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_interno)
+    payment_data, expiracao = _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_interno)
 
     # Tenta primeiro com application_fee (split marketplace)
     if taxa_plataforma > 0:
@@ -58,7 +63,8 @@ def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_inte
                 "sucesso": True,
                 "txid": resp["id"],
                 "copia_cola": resp["point_of_interaction"]["transaction_data"]["qr_code"],
-                "qr_code_img": resp["point_of_interaction"]["transaction_data"]["qr_code_base64"]
+                "qr_code_img": resp["point_of_interaction"]["transaction_data"]["qr_code_base64"],
+                "expiracao": expiracao,
             }
         return {"sucesso": False, "resp": resp}
 
