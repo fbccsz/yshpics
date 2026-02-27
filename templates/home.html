@@ -5,301 +5,246 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>yshpics | Cobertura Fotográfica</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        .btn-azul { background-color: #3b82f6; color: #fff; font-weight: bold; transition: all 0.2s; }
-        .btn-azul:hover { background-color: #2563eb; transform: scale(1.02); }
+        body { font-family: 'Inter', sans-serif; }
+
+        .hero-container {
+            position: relative;
+            width: 100%;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #000;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover; background-position: center; z-index: 1;
+        }
+        .hero-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.6); z-index: 2;
+        }
+        .hero-fade {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 180px;
+            background: linear-gradient(to bottom, transparent, #f9fafb); z-index: 3;
+        }
+        .hero-content {
+            position: relative; z-index: 4;
+            max-width: 900px; padding: 0 20px; margin-top: -40px;
+        }
+        .hero-badge {
+            display: inline-block; padding: 6px 20px;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 50px;
+            background: rgba(255,255,255,0.06); backdrop-filter: blur(8px);
+            color: #fff; font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 28px;
+        }
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.4rem, 6vw, 4.5rem);
+            color: #fff; line-height: 1.1; margin: 0 0 20px;
+            font-weight: 500; text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .hero-title i { font-style: italic; color: #bfdbfe; }
+        .hero-subtitle {
+            font-size: clamp(0.95rem, 2vw, 1.2rem);
+            color: #cbd5e1; font-weight: 300; margin-bottom: 40px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            max-width: 600px; margin-left: auto; margin-right: auto;
+        }
+        .hero-search-wrapper {
+            position: relative; max-width: 600px; margin: 0 auto;
+        }
+        .hero-search-input {
+            width: 100%; padding: 20px 20px 20px 52px;
+            border-radius: 50px; border: none;
+            font-size: 1rem; color: #333;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+            outline: none; transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-search-input:focus {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            transform: translateY(-2px);
+        }
+        .hero-search-icon {
+            position: absolute; left: 20px; top: 50%;
+            transform: translateY(-50%); width: 20px; height: 20px;
+            color: #888; pointer-events: none;
+        }
+        .card-album img { transition: transform 0.5s ease; }
+        .card-album:hover img { transform: scale(1.06); }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-up { animation: fadeInUp 0.4s ease-out both; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans flex flex-col min-h-screen">
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
+    <!-- Navbar -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-            <a href="/" class="flex-shrink-0 flex items-center font-black text-3xl italic tracking-tight">
+            <a href="/" class="flex-shrink-0 font-black text-3xl italic tracking-tight">
                 <span class="text-black">ysh</span><span class="text-blue-500">pics</span>
             </a>
-            
-            <div class="flex items-center space-x-4">
-                <button class="text-sm font-semibold border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50">Cadastre-se</button>
-                <button class="text-sm font-semibold bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">Login</button>
+            <div class="flex items-center gap-3">
+                <a href="/cadastro" class="text-sm font-semibold border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
+                    Sou fotógrafo
+                </a>
+                <a href="/login" class="text-sm font-semibold bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                    Entrar
+                </a>
             </div>
-            
         </div>
     </nav>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Hero -->
+    <section class="hero-container">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-fade"></div>
+        <div class="hero-content">
+            <div class="hero-badge">Fotografia Profissional de Eventos</div>
+            <h1 class="hero-title">
+                Momentos capturados.<br>
+                <i>Memórias guardadas.</i>
+            </h1>
+            <p class="hero-subtitle">Encontre suas fotos, compre os originais em alta resolução e guarde para sempre.</p>
+            <div class="hero-search-wrapper">
+                <svg class="hero-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="input-busca" class="hero-search-input"
+                       placeholder="Busque pelo seu evento (ex: Formatura, Show)..."
+                       autocomplete="off" oninput="filtrarAlbuns()">
+            </div>
+        </div>
+    </section>
 
-<style>
-    .hero-container {
-        position: relative;
-        width: 100%;
-        min-height: 80vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-family: 'Inter', sans-serif;
-        background-color: #000;
-        overflow: hidden;
-    }
-
-    .hero-bg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        /* Imagem de fundo temporária. Troque o link por uma foto épica sua depois! */
-        background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=2000&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        z-index: 1;
-    }
-
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        /* Escurece a foto de fundo para o texto branco gritar na tela */
-        background: rgba(0, 0, 0, 0.65); 
-        z-index: 2;
-    }
-
-    .hero-fade {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 200px;
-        /* Faz o fundo sumir para o branco. Se o seu site for escuro, troque o #ffffff para #000000 */
-        background: linear-gradient(to bottom, transparent, #ffffff);
-        z-index: 3;
-    }
-
-    .hero-content {
-        position: relative;
-        z-index: 4;
-        max-width: 900px;
-        padding: 0 20px;
-        margin-top: -40px;
-    }
-
-    .hero-badge {
-        display: inline-block;
-        padding: 6px 24px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(8px);
-        color: #fff;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin-bottom: 30px;
-    }
-
-    .hero-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 4.5rem;
-        color: #ffffff;
-        line-height: 1.1;
-        margin: 0 0 20px 0;
-        font-weight: 500;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-
-    .hero-title i {
-        font-style: italic;
-        color: #e2e8f0;
-    }
-
-    .hero-subtitle {
-        font-size: 1.25rem;
-        color: #cbd5e1;
-        font-weight: 300;
-        margin-bottom: 45px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-        max-width: 650px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .hero-search-wrapper {
-        position: relative;
-        max-width: 650px;
-        margin: 0 auto;
-    }
-
-    .hero-search-input {
-        width: 100%;
-        padding: 22px 20px 22px 55px;
-        border-radius: 50px;
-        border: none;
-        font-size: 1.1rem;
-        color: #333;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        outline: none;
-        transition: all 0.3s ease;
-    }
-
-    .hero-search-input:focus {
-        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-        transform: translateY(-2px);
-    }
-
-    .hero-search-icon {
-        position: absolute;
-        left: 22px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 22px;
-        height: 22px;
-        color: #888;
-        pointer-events: none;
-    }
-
-    .hero-search-button {
-        position: absolute;
-        right: 8px;
-        top: 8px;
-        bottom: 8px;
-        padding: 0 35px;
-        border-radius: 50px;
-        border: none;
-        background-color: #111;
-        color: #fff;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    .hero-search-button:hover {
-        background-color: #333;
-    }
-
-    /* Ajustes para a tela do celular */
-    @media (max-width: 768px) {
-        .hero-title {
-            font-size: 2.8rem;
-        }
-        .hero-subtitle {
-            font-size: 1rem;
-            padding: 0 10px;
-        }
-        .hero-search-input {
-            padding: 18px 15px 18px 45px;
-            font-size: 0.95rem;
-        }
-        .hero-search-button {
-            padding: 0 20px;
-            font-size: 0.95rem;
-        }
-        .hero-search-icon {
-            left: 15px;
-            width: 18px;
-            height: 18px;
-        }
-    }
-</style>
-
-<section class="hero-container">
-    <div class="hero-bg"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-fade"></div>
-
-    <div class="hero-content">
-        <div class="hero-badge">Fotografia Profissional de Eventos</div>
-        
-        <h1 class="hero-title">
-            Momentos capturados.<br>
-            <i>Memórias guardadas.</i>
-        </h1>
-        
-        <p class="hero-subtitle">Encontre suas fotos de eventos recentes, compre os originais em alta resolução e guarde para sempre.</p>
-        
-        <form action="/" method="GET" class="hero-search-wrapper">
-            <svg class="hero-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input type="text" id="input-busca" class="hero-search-input" placeholder="Busque pelo seu evento (ex: Formatura, Show)..." autocomplete="off" oninput="filtrarAlbuns()">
-        </form>
-    </div>
-</section>
-
-    <div class="max-w-7xl mx-auto px-4 py-8 w-full flex flex-col items-center">
-        <p class="text-sm font-bold text-gray-400 uppercase tracking-widest" id="texto-exibindo">Últimos eventos</p>
+    <!-- Albums section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4 w-full flex items-center justify-between">
+        <p class="text-xs font-black text-gray-400 uppercase tracking-widest" id="texto-exibindo">Últimos eventos</p>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 pb-20 flex-grow w-full">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="grid-albuns">
-            
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 flex-grow w-full">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5" id="grid-albuns">
+
             {% for album in albuns %}
-            <a href="/{{ album.hash_url }}" class="block group card-album" data-titulo="{{ album.titulo|lower }}">
-                <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden relative border border-gray-100">
-                    
-                    {% if album.fotos %}
-                        <img src="{{ album.fotos[0].caminho_baixa_res }}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
-                    {% else %}
-                        <div class="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-400">Sem fotos</div>
-                    {% endif %}
-
-                    <div class="absolute top-36 left-4 bg-black text-white p-2 rounded-lg shadow-lg text-center leading-tight w-14">
-                        <span class="block text-xl font-black text-blue-400">{{ album.data_evento.strftime('%d') }}</span>
-                        <span class="block text-xs uppercase font-bold">{{ album.data_evento.strftime('%b') }}</span>
+            <a href="/{{ album.hash_url }}" class="block card-album fade-in-up" data-titulo="{{ album.titulo|lower }}"
+               style="animation-delay: {{ loop.index0 * 60 }}ms">
+                <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 h-full flex flex-col">
+                    <div class="relative overflow-hidden" style="height: 200px;">
+                        {% if album.fotos %}
+                        <img src="{{ album.fotos[0].caminho_baixa_res }}"
+                             class="w-full h-full object-cover"
+                             loading="lazy" alt="{{ album.titulo }}">
+                        {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        {% endif %}
+                        <!-- Date badge -->
+                        <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-center leading-tight">
+                            <span class="block text-lg font-black text-blue-300 leading-none">{{ album.data_evento.strftime('%d') }}</span>
+                            <span class="block text-[10px] uppercase font-bold tracking-wider">{{ album.data_evento.strftime('%b') }}</span>
+                        </div>
+                        <!-- Photo count badge -->
+                        {% if album.fotos %}
+                        <div class="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                            {{ album.fotos | length }} foto{% if album.fotos | length != 1 %}s{% endif %}
+                        </div>
+                        {% endif %}
                     </div>
-
-                    <div class="p-5 pt-6">
-                        <h3 class="font-bold text-gray-900 leading-tight mb-1 text-lg">{{ album.titulo }}</h3>
-                        <p class="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-2">
-                            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            Salvador / BA
-                        </p>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <h3 class="font-bold text-gray-900 leading-tight text-sm line-clamp-2">{{ album.titulo }}</h3>
+                        <div class="flex items-center justify-between mt-3">
+                            <p class="text-xs text-gray-400 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                Salvador / BA
+                            </p>
+                            <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">Ver fotos →</span>
+                        </div>
                     </div>
                 </div>
             </a>
             {% endfor %}
 
+            {% if not albuns %}
+            <div class="col-span-full text-center py-20 text-gray-400">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <p class="text-lg font-bold text-gray-500">Nenhum evento disponível ainda</p>
+                <p class="text-sm mt-1">Os álbuns aparecerão aqui quando forem publicados.</p>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- No results from filter -->
+        <div id="sem-resultados" class="hidden text-center py-16 text-gray-400">
+            <p class="text-base font-semibold">Nenhum evento encontrado para "<span id="termo-busca" class="text-gray-700"></span>"</p>
+            <p class="text-sm mt-1">Tente outro nome ou verifique a ortografia.</p>
         </div>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto py-8 px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-gray-500 text-sm font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
-            <a href="https://instagram.com/seu_perfil" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                <span class="font-bold">@yshpics</span>
+    <!-- CTA for photographers -->
+    <section class="bg-black text-white py-14 px-4">
+        <div class="max-w-2xl mx-auto text-center">
+            <p class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">Para fotógrafos</p>
+            <h2 class="text-3xl font-black mb-3" style="font-family: 'Playfair Display', serif;">
+                Venda suas fotos.<br><i class="text-blue-300">Sem mensalidade.</i>
+            </h2>
+            <p class="text-gray-400 text-sm mb-8 max-w-md mx-auto">Crie sua galeria, compartilhe o link e receba direto no Pix. Plano Starter gratuito com 10% de comissão por venda.</p>
+            <a href="/cadastro"
+               class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold px-8 py-3.5 rounded-xl transition-colors text-sm tracking-wide">
+                Criar conta grátis →
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-7 px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p class="text-gray-400 text-xs font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
+            <a href="https://instagram.com/yshpics" target="_blank" rel="noopener"
+               class="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors text-sm font-bold">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                @yshpics
             </a>
         </div>
     </footer>
 
     <script>
-        function toggleFiltro() {
-            const barra = document.getElementById('barra-busca');
-            barra.classList.toggle('hidden');
-            if(!barra.classList.contains('hidden')) {
-                document.getElementById('input-busca').focus();
-            }
-        }
-
         function filtrarAlbuns() {
-            const termo = document.getElementById('input-busca').value.toLowerCase();
+            const termo = document.getElementById('input-busca').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.card-album');
+            const textoExibindo = document.getElementById('texto-exibindo');
+            const semResultados = document.getElementById('sem-resultados');
             let visiveis = 0;
 
             cards.forEach(card => {
                 const titulo = card.getAttribute('data-titulo');
-                if(titulo.includes(termo)) {
-                    card.style.display = 'block';
-                    visiveis++;
-                } else {
-                    card.style.display = 'none';
-                }
+                const visivel = termo === '' || titulo.includes(termo);
+                card.style.display = visivel ? '' : 'none';
+                if (visivel) visiveis++;
             });
 
-            document.getElementById('texto-exibindo').innerText = termo === "" ? "Últimos eventos" : `Encontrados: ${visiveis} eventos`;
+            if (termo === '') {
+                textoExibindo.innerText = 'Últimos eventos';
+                semResultados.classList.add('hidden');
+            } else {
+                textoExibindo.innerText = `${visiveis} resultado${visiveis !== 1 ? 's' : ''} para "${termo}"`;
+                document.getElementById('termo-busca').textContent = termo;
+                semResultados.classList.toggle('hidden', visiveis > 0);
+            }
         }
     </script>
 </body>
