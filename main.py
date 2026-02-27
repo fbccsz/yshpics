@@ -214,7 +214,8 @@ async def processar_login(request: Request, email: str = Form(...), senha: str =
     fotografo = db.query(Fotografo).filter(Fotografo.email == email).first()
     if not fotografo or not hmac.compare_digest(fotografo.senha_hash, _hash_senha(senha)):
         return templates.TemplateResponse("login.html", {"request": request, "erro": "E-mail ou senha incorretos."})
-    resposta = RedirectResponse(url="/admin", status_code=303)
+    destino = "/owner" if (OWNER_EMAIL and fotografo.email == OWNER_EMAIL) else "/admin"
+    resposta = RedirectResponse(url=destino, status_code=303)
     resposta.set_cookie("sessao_admin", _assinar_sessao(fotografo.id), httponly=True, samesite="lax")
     return resposta
 
@@ -379,7 +380,8 @@ async def tela_admin(request: Request, db: Session = Depends(get_db)):
         "fotografo": fotografo,
         "albuns": meus_albuns,
         "lucro": f"{lucro_limpo:.2f}".replace('.', ','),
-        "vendas": len(pedidos_pagos)
+        "vendas": len(pedidos_pagos),
+        "is_owner": bool(OWNER_EMAIL and fotografo.email == OWNER_EMAIL),
     })
 
 @app.post("/api/configurar-mp")

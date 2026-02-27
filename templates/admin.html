@@ -126,6 +126,12 @@
                     <span class="font-semibold text-gray-800">{{ (fotografo.nome or 'Fotógrafo').split()[0] }}</span>
                     <span class="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full uppercase">{{ fotografo.plano_atual }}</span>
                 </div>
+                {% if is_owner %}
+                <a href="/owner" class="text-sm font-semibold text-violet-600 hover:text-violet-800 border border-violet-200 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition-colors flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Painel Master
+                </a>
+                {% endif %}
                 <a href="/logout" class="text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors border border-gray-200 px-3 py-1.5 rounded-lg hover:border-red-200 hover:bg-red-50">
                     Sair
                 </a>
