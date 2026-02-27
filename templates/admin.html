@@ -225,6 +225,11 @@
                             <input type="text" id="titulo" required placeholder="Ex: Formatura Direito 2025"
                                    class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
                         </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Data do Evento</label>
+                            <input type="date" id="data_evento"
+                                   class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                        </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">Categoria</label>
@@ -374,8 +379,10 @@
             formData.append('preco_alta', document.getElementById('preco_alta').value);
             const categoria = document.getElementById('categoria').value;
             const cidade = document.getElementById('cidade').value;
+            const dataEvento = document.getElementById('data_evento').value;
             if (categoria) formData.append('categoria', categoria);
             if (cidade) formData.append('cidade', cidade);
+            if (dataEvento) formData.append('data_evento', dataEvento);
             for (let i = 0; i < arquivosInput.files.length; i++) {
                 formData.append('fotos', arquivosInput.files[i]);
             }

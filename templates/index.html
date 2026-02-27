@@ -66,7 +66,7 @@
             </a>
             <h1 id="header-title" class="text-lg font-black uppercase tracking-tight truncate max-w-[70%]">{{ titulo_album }}</h1>
 
-            <button id="btn-fechar-multi" onclick="sairMultiSelecao()" class="hidden absolute left-4 p-2 text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-2">
+            <button id="btn-fechar-multi" onclick="sairMultiSelecao()" class="hidden absolute left-4 p-2 text-blue-600 hover:text-blue-800 transition-colors items-center gap-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             <div id="header-multi-info" class="hidden text-lg font-black text-blue-600 tracking-tight">
@@ -120,7 +120,7 @@
         </div>
     </div>
 
-    <div id="tela-revisao" class="hidden flex-col min-h-screen w-full bg-gray-50 z-50 absolute top-0 left-0 pb-32 fade-in">
+    <div id="tela-revisao" class="hidden min-h-screen w-full bg-gray-50 z-50 absolute top-0 left-0 pb-32 fade-in">
         <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 h-16 flex items-center shadow-sm">
             <button onclick="voltarParaGaleria()" class="absolute left-4 p-2 text-gray-600 hover:text-blue-500 transition-colors flex items-center gap-1 font-bold text-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -168,6 +168,7 @@
                            onkeydown="if(event.key==='Enter') confirmarPedido()">
                     <p class="text-[11px] text-gray-400 mt-1">Usado para identificar seu pedido.</p>
                 </div>
+                <p id="erro-modal-cliente" class="hidden text-xs text-red-600 font-semibold -mt-1"></p>
                 <button onclick="confirmarPedido()"
                         class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3.5 rounded-xl text-sm uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8H2a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
@@ -295,7 +296,9 @@
             modoMultiSelecao = true;
             document.getElementById('btn-voltar').classList.add('hidden');
             document.getElementById('header-title').classList.add('hidden');
-            document.getElementById('btn-fechar-multi').classList.remove('hidden');
+            const btnFechar = document.getElementById('btn-fechar-multi');
+            btnFechar.classList.remove('hidden');
+            btnFechar.style.display = 'flex';
             document.getElementById('header-multi-info').classList.remove('hidden');
             document.getElementById('main-header').classList.replace('bg-white', 'bg-blue-50');
         }
@@ -304,7 +307,9 @@
             modoMultiSelecao = false;
             document.getElementById('btn-voltar').classList.remove('hidden');
             document.getElementById('header-title').classList.remove('hidden');
-            document.getElementById('btn-fechar-multi').classList.add('hidden');
+            const btnFechar = document.getElementById('btn-fechar-multi');
+            btnFechar.classList.add('hidden');
+            btnFechar.style.display = '';
             document.getElementById('header-multi-info').classList.add('hidden');
             document.getElementById('main-header').classList.replace('bg-blue-50', 'bg-white');
         }
@@ -314,13 +319,19 @@
         // ==========================================
         function irParaRevisao() {
             document.getElementById('tela-galeria').classList.add('hidden');
-            document.getElementById('tela-revisao').classList.remove('hidden');
+            const revisao = document.getElementById('tela-revisao');
+            revisao.classList.remove('hidden');
+            revisao.style.display = 'flex';
+            revisao.style.flexDirection = 'column';
             window.scrollTo(0, 0); 
             renderizarListaRevisao();
         }
 
         function voltarParaGaleria() {
-            document.getElementById('tela-revisao').classList.add('hidden');
+            const revisao = document.getElementById('tela-revisao');
+            revisao.classList.add('hidden');
+            revisao.style.display = '';
+            revisao.style.flexDirection = '';
             document.getElementById('tela-galeria').classList.remove('hidden');
         }
 
@@ -402,8 +413,16 @@
         async function confirmarPedido() {
             const nome = document.getElementById('campo-nome').value.trim();
             const email = document.getElementById('campo-email').value.trim();
-            if (!nome || !email) { alert('Por favor, preencha seu nome e e-mail.'); return; }
-            if (!email.includes('@')) { alert('Por favor, insira um e-mail válido.'); return; }
+            const erroEl = document.getElementById('erro-modal-cliente');
+            function mostrarErro(msg) {
+                erroEl.textContent = msg;
+                erroEl.classList.remove('hidden');
+            }
+            erroEl.classList.add('hidden');
+            if (!nome) { mostrarErro('Por favor, preencha seu nome completo.'); document.getElementById('campo-nome').focus(); return; }
+            if (!email) { mostrarErro('Por favor, preencha seu e-mail.'); document.getElementById('campo-email').focus(); return; }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) { mostrarErro('Por favor, insira um e-mail válido.'); document.getElementById('campo-email').focus(); return; }
 
             fecharModalCliente();
             const btn = document.getElementById('btn-gerar-pix');
@@ -428,13 +447,25 @@
 
                 if (resultado.sucesso) window.location.replace(`/pagamento/${resultado.pedido_id}`);
                 else {
-                    alert("Erro ao gerar PIX: " + (resultado.erro || "Tente novamente."));
+                    mostrarErroPix(resultado.erro || "Tente novamente.");
                     btn.innerHTML = textoOriginal;
                     btn.disabled = false;
                 }
             } catch (erro) {
-                alert("Erro de conexão."); btn.innerHTML = textoOriginal; btn.disabled = false;
+                mostrarErroPix("Erro de conexão. Tente novamente."); btn.innerHTML = textoOriginal; btn.disabled = false;
             }
+        }
+
+        function mostrarErroPix(msg) {
+            // Show error below the PIX button
+            let el = document.getElementById('erro-pix');
+            if (!el) {
+                el = document.createElement('p');
+                el.id = 'erro-pix';
+                el.className = 'text-xs text-red-600 font-semibold text-center mt-2';
+                document.getElementById('btn-gerar-pix').parentNode.appendChild(el);
+            }
+            el.textContent = msg;
         }
 
         // ==========================================
