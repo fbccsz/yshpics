@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Text, text
 from sqlalchemy.orm import declarative_base, relationship
 from dotenv import load_dotenv
 
@@ -140,3 +140,10 @@ class ItemPedido(Base):
 
 # Cria as tabelas no banco de dados
 Base.metadata.create_all(bind=engine)
+
+# Migração: adiciona colunas que podem não existir em bancos já criados
+with engine.connect() as conn:
+    conn.execute(
+        text("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pix_expiracao TIMESTAMP")
+    )
+    conn.commit()
