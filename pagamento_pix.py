@@ -35,7 +35,10 @@ def _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_int
     }
 
 def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_interno, token_fotografo, taxa_plataforma):
-    """Gera cobrança PIX. Tenta com split de comissão; se falhar, tenta sem."""
+    """Gera cobrança PIX. Tenta com split de comissão; se falhar, tenta sem.
+    
+    Retorna dict com 'sucesso', 'split_aplicado' (bool) e dados do PIX.
+    """
 
     sdk = mercadopago.SDK(token_fotografo)
 
@@ -62,6 +65,7 @@ def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_inte
     try:
         resultado = _tentar(payment_data)
         if resultado["sucesso"]:
+            resultado["split_aplicado"] = "application_fee" in payment_data
             return resultado
 
         # Se falhou com application_fee, tenta sem (conta não-marketplace)
@@ -70,6 +74,7 @@ def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_inte
             payment_data_sem_split = {k: v for k, v in payment_data.items() if k != "application_fee"}
             resultado2 = _tentar(payment_data_sem_split)
             if resultado2["sucesso"]:
+                resultado2["split_aplicado"] = False
                 return resultado2
             print("--- ERRO MERCADO PAGO (sem split) ---", resultado2["resp"])
             return {"sucesso": False, "erro": resultado2["resp"].get("message", "Falha na API do Mercado Pago.")}
