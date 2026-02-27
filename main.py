@@ -18,7 +18,7 @@ from PIL import Image
 import mercadopago
 
 # Importações dos nossos arquivos
-from models import Pedido, Foto, Cliente, Album, ItemPedido, engine
+from models import Pedido, Foto, Cliente, Album, ItemPedido, engine, Fotografo
 from pagamento_pix import gerar_cobranca_pix
 
 app = FastAPI()
