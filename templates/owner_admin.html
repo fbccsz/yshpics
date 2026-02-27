@@ -105,10 +105,20 @@
             <div class="flex-1">
                 <p class="text-xs font-bold text-violet-300 uppercase tracking-wider">Volume total movimentado na plataforma</p>
                 <p class="text-3xl font-black text-white mt-1">R$ {{ volume_total }}</p>
+                {% if metricas_reset_em %}
+                <p class="text-xs text-violet-400 mt-1">Métricas a partir de {{ metricas_reset_em }}</p>
+                {% endif %}
             </div>
-            <svg class="w-12 h-12 text-violet-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-            </svg>
+            <div class="flex flex-col items-end gap-2">
+                <svg class="w-12 h-12 text-violet-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                <form method="POST" action="/owner/resetar-metricas" onsubmit="return confirm('Resetar as métricas agora? Os dados históricos serão preservados, mas as contagens começarão do zero.')">
+                    <button type="submit" class="text-xs font-semibold text-red-400 hover:text-red-300 border border-red-800 px-3 py-1.5 rounded-lg hover:border-red-600 transition-colors whitespace-nowrap">
+                        🔄 Resetar métricas
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- Tabs -->

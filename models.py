@@ -105,11 +105,26 @@ class Pedido(Base):
     pix_qr_code_base64 = Column(Text, nullable=True) # TIPO TEXT PARA NÃO QUEBRAR MAIS!
     
     # Guest Checkout: O token mágico de download sem senha
-    token_download = Column(String, default=lambda: str(uuid.uuid4())) 
-    
+    token_download = Column(String, default=lambda: str(uuid.uuid4()))
+
+    # PIX: data/hora em que o código expira (30 min após criação)
+    pix_expiracao = Column(DateTime, nullable=True)
+
     cliente = relationship("Cliente", back_populates="pedidos")
     fotografo = relationship("Fotografo", back_populates="pedidos")
     itens = relationship("ItemPedido", back_populates="pedido")
+
+
+# ==========================================
+# 5. CONFIGURAÇÃO DA PLATAFORMA
+# ==========================================
+class PlataformaConfig(Base):
+    __tablename__ = "plataforma_config"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # Quando o owner resetou as métricas pela última vez (None = sem reset)
+    metricas_reset_em = Column(DateTime, nullable=True)
+
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"

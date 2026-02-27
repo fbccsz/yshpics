@@ -19,13 +19,15 @@ from PIL import Image
 import mercadopago
 
 # Importações dos nossos arquivos
-from models import Pedido, Foto, Cliente, Album, ItemPedido, engine, Fotografo
+from models import Pedido, Foto, Cliente, Album, ItemPedido, PlataformaConfig, engine, Fotografo
 from pagamento_pix import gerar_cobranca_pix
 
 app = FastAPI()
 
 # Chave secreta para assinar cookies de sessão. Defina SESSION_SECRET no .env em produção.
 SESSION_SECRET = os.getenv("SESSION_SECRET", os.urandom(32).hex())
+SESSION_DURACAO_DIAS = 7
+DOWNLOAD_DURACAO_DIAS = 7
 
 # E-mail do dono da plataforma — define acesso ao painel master em /owner
 OWNER_EMAIL = os.getenv("OWNER_EMAIL", "")
@@ -46,16 +48,24 @@ def _hash_senha(senha: str) -> str:
     return hashlib.sha256(senha.encode("utf-8")).hexdigest()
 
 def _assinar_sessao(fotografo_id: int) -> str:
-    msg = str(fotografo_id).encode()
-    sig = hmac.new(SESSION_SECRET.encode(), msg, hashlib.sha256).hexdigest()
-    return f"{fotografo_id}.{sig}"
+    expira = int((datetime.utcnow() + timedelta(days=SESSION_DURACAO_DIAS)).timestamp())
+    payload = f"{fotografo_id}.{expira}"
+    sig = hmac.new(SESSION_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{sig}"
 
 def _verificar_sessao(token: str) -> "int | None":
     try:
-        fid, sig = token.split(".", 1)
-        expected = hmac.new(SESSION_SECRET.encode(), fid.encode(), hashlib.sha256).hexdigest()
-        if hmac.compare_digest(sig, expected):
-            return int(fid)
+        partes = token.split(".")
+        if len(partes) != 3:
+            return None
+        fid, expira, sig = partes
+        payload = f"{fid}.{expira}"
+        expected = hmac.new(SESSION_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        if datetime.utcnow().timestamp() > int(expira):
+            return None
+        return int(fid)
     except Exception:
         pass
     return None
@@ -159,6 +169,7 @@ def comprar_foto(foto_id: int, nome: str, email: str, qualidade: str = 'alta', d
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
     novo_pedido.pix_qr_code_base64 = pix["qr_code_img"]
+    novo_pedido.pix_expiracao = pix.get("expiracao")
     db.commit()
 
     return {"sucesso": True, "pedido_id": novo_pedido.id}
@@ -175,16 +186,22 @@ async def mercado_pago_webhook(request: Request, db: Session = Depends(get_db)):
         if payment_id:
             # Encontra o pedido pelo TXID que salvamos
             pedido = db.query(Pedido).filter(Pedido.pix_txid == str(payment_id)).first()
-            if pedido and pedido.status_pagamento != "Pago":
+            if pedido and pedido.status_pagamento == "Pendente":
                 
                 # Valida usando o SDK do Fotógrafo dono do pedido
                 sdk_fotografo = mercadopago.SDK(pedido.fotografo.mp_access_token)
                 payment_info = sdk_fotografo.payment().get(payment_id)
                 
-                if payment_info["status"] == 200 and payment_info["response"]["status"] == "approved":
-                    pedido.status_pagamento = "Pago"
-                    db.commit()
-                    print(f"\n💰 SUCESSO! Pedido {pedido.id} foi pago.")
+                if payment_info["status"] == 200:
+                    mp_status = payment_info["response"]["status"]
+                    if mp_status == "approved":
+                        pedido.status_pagamento = "Pago"
+                        db.commit()
+                        print(f"\n💰 SUCESSO! Pedido {pedido.id} foi pago.")
+                    elif mp_status in ("cancelled", "expired"):
+                        pedido.status_pagamento = "Expirado"
+                        db.commit()
+                        print(f"\n⏰ Pedido {pedido.id} expirado/cancelado no MP.")
                     
     return {"status": "recebido com sucesso"}
 
@@ -222,7 +239,11 @@ async def processar_cadastro(request: Request, nome: str = Form(...), email: str
     return RedirectResponse(url="/login", status_code=303)
 
 @app.get("/login", response_class=HTMLResponse)
-async def tela_login(request: Request):
+async def tela_login(request: Request, db: Session = Depends(get_db)):
+    fotografo = get_fotografo_logado(request, db)
+    if fotografo:
+        destino = "/owner" if (OWNER_EMAIL and fotografo.email == OWNER_EMAIL) else "/admin"
+        return RedirectResponse(url=destino, status_code=303)
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
@@ -232,7 +253,11 @@ async def processar_login(request: Request, email: str = Form(...), senha: str =
         return templates.TemplateResponse("login.html", {"request": request, "erro": "E-mail ou senha incorretos."})
     destino = "/owner" if (OWNER_EMAIL and fotografo.email == OWNER_EMAIL) else "/admin"
     resposta = RedirectResponse(url=destino, status_code=303)
-    resposta.set_cookie("sessao_admin", _assinar_sessao(fotografo.id), httponly=True, samesite="lax")
+    resposta.set_cookie(
+        "sessao_admin", _assinar_sessao(fotografo.id),
+        httponly=True, samesite="lax",
+        max_age=SESSION_DURACAO_DIAS * 86400
+    )
     return resposta
 
 @app.get("/logout")
@@ -320,6 +345,7 @@ async def criar_pedido(dados: CriarPedidoIn, db: Session = Depends(get_db)):
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
     novo_pedido.pix_qr_code_base64 = pix["qr_code_img"]
+    novo_pedido.pix_expiracao = pix.get("expiracao")
     db.commit()
 
     return {"sucesso": True, "pedido_id": novo_pedido.id}
@@ -329,19 +355,41 @@ async def tela_pagamento(request: Request, pedido_id: int, db: Session = Depends
     pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
     if not pedido:
         raise HTTPException(status_code=404)
-        
-    if datetime.utcnow() > pedido.data_pedido + timedelta(minutes=30):
-        raise HTTPException(status_code=403, detail="Expirado.")
+
+    # Determina expiração (usa pix_expiracao se disponível, senão fallback para 30 min após criação)
+    expiracao = pedido.pix_expiracao or (pedido.data_pedido + timedelta(minutes=30))
+    if pedido.status_pagamento == "Pendente" and datetime.utcnow() > expiracao:
+        pedido.status_pagamento = "Expirado"
+        db.commit()
+
+    if pedido.status_pagamento == "Expirado":
+        return templates.TemplateResponse("pagamento.html", {
+            "request": request,
+            "pedido_id": pedido.id,
+            "valor_total": f"{pedido.valor_total:.2f}".replace('.', ','),
+            "copia_cola": None,
+            "qr_code_base64": None,
+            "expirado": True,
+            "expiracao_iso": None,
+        })
 
     if pedido.status_pagamento == "Pago":
-        return templates.TemplateResponse("sucesso.html", {"request": request, "pedido_id": pedido.id, "qtd_fotos": len(pedido.itens)})
+        return templates.TemplateResponse("sucesso.html", {
+            "request": request,
+            "pedido_id": pedido.id,
+            "qtd_fotos": len(pedido.itens),
+            "download_token": pedido.token_download,
+        })
 
+    expiracao_iso = expiracao.strftime("%Y-%m-%dT%H:%M:%S") if expiracao else None
     return templates.TemplateResponse("pagamento.html", {
         "request": request,
         "pedido_id": pedido.id,
         "valor_total": f"{pedido.valor_total:.2f}".replace('.', ','),
         "copia_cola": pedido.pix_copia_cola,
-        "qr_code_base64": pedido.pix_qr_code_base64
+        "qr_code_base64": pedido.pix_qr_code_base64,
+        "expirado": False,
+        "expiracao_iso": expiracao_iso,
     })
 
 @app.get("/api/status-pagamento/{pedido_id}")
@@ -349,20 +397,75 @@ async def verificar_status_pagamento(pedido_id: int, db: Session = Depends(get_d
     pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
     if not pedido:
         raise HTTPException(status_code=404)
+    # Auto-expirar se o tempo passou e ainda está Pendente
+    if pedido.status_pagamento == "Pendente":
+        expiracao = pedido.pix_expiracao or (pedido.data_pedido + timedelta(minutes=30))
+        if datetime.utcnow() > expiracao:
+            pedido.status_pagamento = "Expirado"
+            db.commit()
     return {"status": pedido.status_pagamento}
+
+@app.post("/api/regenerar-pix/{pedido_id}")
+async def regenerar_pix(pedido_id: int, db: Session = Depends(get_db)):
+    """Regenera o PIX de um pedido expirado ou cancelado."""
+    pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(status_code=404)
+    if pedido.status_pagamento not in ("Expirado", "Cancelado"):
+        return {"sucesso": False, "erro": "Este pedido não pode ser regenerado."}
+
+    fotografo = pedido.fotografo
+    if not fotografo.mp_access_token:
+        return {"sucesso": False, "erro": "Fotógrafo não configurado para receber."}
+
+    pix = gerar_cobranca_pix(
+        valor_pedido=pedido.valor_total,
+        email_cliente=pedido.cliente.email,
+        nome_cliente=pedido.cliente.nome,
+        id_pedido_interno=pedido.id,
+        token_fotografo=fotografo.mp_access_token,
+        taxa_plataforma=pedido.taxa_plataforma,
+    )
+
+    if not pix["sucesso"]:
+        return {"sucesso": False, "erro": pix.get("erro", "Falha ao regenerar o PIX.")}
+
+    pedido.status_pagamento = "Pendente"
+    pedido.pix_txid = pix["txid"]
+    pedido.pix_copia_cola = pix["copia_cola"]
+    pedido.pix_qr_code_base64 = pix["qr_code_img"]
+    pedido.pix_expiracao = pix.get("expiracao")
+    db.commit()
+
+    expiracao_iso = pedido.pix_expiracao.strftime("%Y-%m-%dT%H:%M:%S") if pedido.pix_expiracao else None
+    return {
+        "sucesso": True,
+        "copia_cola": pedido.pix_copia_cola,
+        "qr_code_base64": pedido.pix_qr_code_base64,
+        "expiracao_iso": expiracao_iso,
+    }
 
 @app.get("/sucesso/{pedido_id}", response_class=HTMLResponse)
 async def tela_sucesso(request: Request, pedido_id: int, db: Session = Depends(get_db)):
     pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
     if not pedido or pedido.status_pagamento != "Pago":
         raise HTTPException(status_code=403)
-    return templates.TemplateResponse("sucesso.html", {"request": request, "pedido_id": pedido.id, "qtd_fotos": len(pedido.itens)})
+    return templates.TemplateResponse("sucesso.html", {
+        "request": request,
+        "pedido_id": pedido.id,
+        "qtd_fotos": len(pedido.itens),
+        "download_token": pedido.token_download,
+    })
 
-@app.get("/baixar-zip/{pedido_id}")
-async def baixar_fotos_zip(pedido_id: int, db: Session = Depends(get_db)):
-    pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
+@app.get("/baixar/{token}")
+async def baixar_fotos_zip(token: str, db: Session = Depends(get_db)):
+    pedido = db.query(Pedido).filter(Pedido.token_download == token).first()
     if not pedido or pedido.status_pagamento != "Pago":
         raise HTTPException(status_code=403)
+
+    # Verifica expiração do link de download (7 dias após a criação do pedido)
+    if datetime.utcnow() > pedido.data_pedido + timedelta(days=DOWNLOAD_DURACAO_DIAS):
+        raise HTTPException(status_code=410, detail="Link de download expirado.")
 
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -483,7 +586,14 @@ async def painel_dono(request: Request, db: Session = Depends(get_db)):
     todos_fotografos = db.query(Fotografo).order_by(Fotografo.id.desc()).all()
     todos_albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
     todos_pedidos = db.query(Pedido).order_by(Pedido.data_pedido.desc()).all()
-    pedidos_pagos = [p for p in todos_pedidos if p.status_pagamento == "Pago"]
+
+    # Filtra métricas a partir do último reset (se houver)
+    config = db.query(PlataformaConfig).first()
+    metricas_reset_em = config.metricas_reset_em if config else None
+    if metricas_reset_em:
+        pedidos_pagos = [p for p in todos_pedidos if p.status_pagamento == "Pago" and p.data_pedido >= metricas_reset_em]
+    else:
+        pedidos_pagos = [p for p in todos_pedidos if p.status_pagamento == "Pago"]
 
     receita_total = sum(p.taxa_plataforma for p in pedidos_pagos)
     volume_total = sum(p.valor_total for p in pedidos_pagos)
@@ -497,6 +607,7 @@ async def painel_dono(request: Request, db: Session = Depends(get_db)):
         "pedidos_pagos": len(pedidos_pagos),
         "receita_total": f"{receita_total:.2f}".replace('.', ','),
         "volume_total": f"{volume_total:.2f}".replace('.', ','),
+        "metricas_reset_em": metricas_reset_em.strftime("%d/%m/%Y %H:%M") if metricas_reset_em else None,
     })
 
 @app.post("/owner/upload")
@@ -578,6 +689,20 @@ async def owner_alterar_plano(
     if not fotografo:
         raise HTTPException(status_code=404)
     fotografo.plano_atual = novo_plano
+    db.commit()
+    return RedirectResponse(url="/owner", status_code=303)
+
+@app.post("/owner/resetar-metricas")
+async def owner_resetar_metricas(request: Request, db: Session = Depends(get_db)):
+    """Reseta as métricas do painel master a partir deste momento."""
+    owner = get_owner(request, db)
+    if not owner:
+        raise HTTPException(status_code=401)
+    config = db.query(PlataformaConfig).first()
+    if not config:
+        config = PlataformaConfig()
+        db.add(config)
+    config.metricas_reset_em = datetime.utcnow()
     db.commit()
     return RedirectResponse(url="/owner", status_code=303)
 

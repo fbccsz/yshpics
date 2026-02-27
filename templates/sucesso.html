@@ -19,7 +19,7 @@
         <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Tudo certo!</h2>
         <p class="text-gray-600 mb-8">O seu pagamento foi confirmado. Suas <strong>{{ qtd_fotos }}</strong> fotos em alta resolução já estão separadas e prontas.</p>
 
-        <a href="/baixar-zip/{{ pedido_id }}" 
+        <a href="/baixar/{{ download_token }}" 
            class="w-full inline-flex justify-center items-center px-6 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <svg class="mr-2 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -27,7 +27,7 @@
             Baixar minhas fotos (ZIP)
         </a>
 
-        <p class="mt-6 text-sm text-gray-400">O link de download é válido apenas para este dispositivo.</p>
+        <p class="mt-6 text-sm text-gray-400">O link de download é exclusivo para esta compra e fica disponível por 7 dias.</p>
     </div>
 
 </body>
