@@ -30,6 +30,18 @@ SESSION_SECRET = os.getenv("SESSION_SECRET", os.urandom(32).hex())
 # E-mail do dono da plataforma — define acesso ao painel master em /owner
 OWNER_EMAIL = os.getenv("OWNER_EMAIL", "")
 
+# Comissão e regras de preço
+COMISSAO_STARTER = 0.10          # 10% para plano starter
+COMISSAO_MINIMA = 0.50           # R$0,50 — abaixo disso não tentamos o split
+PRECO_MINIMO = 1.00              # R$1,00 — preço mínimo por foto
+
+def calcular_comissao(valor_total: float, plano: str) -> float:
+    """Retorna a comissão da plataforma; 0 se o plano for pro ou o valor for pequeno demais."""
+    if plano != "starter":
+        return 0.0
+    comissao = round(valor_total * COMISSAO_STARTER, 2)
+    return comissao if comissao >= COMISSAO_MINIMA else 0.0
+
 def _hash_senha(senha: str) -> str:
     return hashlib.sha256(senha.encode("utf-8")).hexdigest()
 
@@ -102,7 +114,7 @@ def comprar_foto(foto_id: int, nome: str, email: str, qualidade: str = 'alta', d
 
     # Define o preço baseado na escolha (alta ou baixa) e calcula a comissão
     valor_venda = foto.preco_alta if qualidade == 'alta' else foto.preco_baixa
-    sua_comissao = round(valor_venda * 0.10, 2) if fotografo.plano_atual == "starter" else 0.0
+    sua_comissao = calcular_comissao(valor_venda, fotografo.plano_atual)
 
     # Registra cliente e pedido
     cliente = db.query(Cliente).filter(Cliente.email == email).first()
@@ -139,6 +151,10 @@ def comprar_foto(foto_id: int, nome: str, email: str, qualidade: str = 'alta', d
         novo_pedido.status_pagamento = "Cancelado"
         db.commit()
         return {"sucesso": False, "erro": pix.get("erro", "Falha ao gerar o PIX no Mercado Pago")}
+
+    # Ajusta comissão registrada ao que foi realmente aplicado
+    if not pix.get("split_aplicado", False):
+        novo_pedido.taxa_plataforma = 0.0
 
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
@@ -261,7 +277,7 @@ async def criar_pedido(dados: CriarPedidoIn, db: Session = Depends(get_db)):
         fotos_itens.append((foto, item.qualidade, preco))
 
     valor_total = round(valor_total, 2)
-    sua_comissao = round(valor_total * 0.10, 2) if fotografo.plano_atual == "starter" else 0.0
+    sua_comissao = calcular_comissao(valor_total, fotografo.plano_atual)
 
     cliente = db.query(Cliente).filter(Cliente.email == dados.email_cliente).first()
     if not cliente:
@@ -296,6 +312,10 @@ async def criar_pedido(dados: CriarPedidoIn, db: Session = Depends(get_db)):
         novo_pedido.status_pagamento = "Cancelado"
         db.commit()
         return {"sucesso": False, "erro": pix.get("erro", "Falha ao gerar o PIX no Mercado Pago")}
+
+    # Ajusta comissão registrada ao que foi realmente aplicado
+    if not pix.get("split_aplicado", False):
+        novo_pedido.taxa_plataforma = 0.0
 
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
@@ -380,8 +400,15 @@ async def tela_admin(request: Request, db: Session = Depends(get_db)):
         "fotografo": fotografo,
         "albuns": meus_albuns,
         "lucro": f"{lucro_limpo:.2f}".replace('.', ','),
+        "total_vendido": f"{total_vendido:.2f}".replace('.', ','),
+        "taxa_cobrada": f"{minhas_taxas:.2f}".replace('.', ','),
         "vendas": len(pedidos_pagos),
         "is_owner": bool(OWNER_EMAIL and fotografo.email == OWNER_EMAIL),
+        "preco_minimo": f"{PRECO_MINIMO:.2f}".replace('.', ','),
+        "preco_minimo_num": PRECO_MINIMO,
+        "comissao_percentual": int(COMISSAO_STARTER * 100),
+        "comissao_minima": f"{COMISSAO_MINIMA:.2f}".replace('.', ','),
+        "venda_minima_com_taxa": f"{COMISSAO_MINIMA / COMISSAO_STARTER:.2f}".replace('.', ','),
     })
 
 @app.post("/api/configurar-mp")
@@ -404,6 +431,9 @@ async def processar_upload(
     fotografo = get_fotografo_logado(request, db)
     if not fotografo:
         raise HTTPException(status_code=401, detail="Não autenticado")
+
+    if preco_baixa < PRECO_MINIMO or preco_alta < PRECO_MINIMO:
+        raise HTTPException(status_code=400, detail=f"Preço mínimo por foto é R${PRECO_MINIMO:.2f}".replace('.', ','))
 
     hash_album = str(uuid.uuid4())[:8]
     novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
@@ -486,6 +516,9 @@ async def owner_upload(
     fotografo = db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
     if not fotografo:
         raise HTTPException(status_code=404, detail="Fotógrafo não encontrado")
+
+    if preco_baixa < PRECO_MINIMO or preco_alta < PRECO_MINIMO:
+        raise HTTPException(status_code=400, detail=f"Preço mínimo por foto é R${PRECO_MINIMO:.2f}".replace('.', ','))
 
     hash_album = str(uuid.uuid4())[:8]
     novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
@@ -575,6 +608,51 @@ async def owner_excluir_album(
             pass
         db.delete(foto)
     db.delete(album)
+    db.commit()
+    return RedirectResponse(url="/owner", status_code=303)
+
+
+@app.post("/owner/excluir-fotografo")
+async def owner_excluir_fotografo(
+    request: Request,
+    fotografo_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    owner = get_owner(request, db)
+    if not owner:
+        raise HTTPException(status_code=401)
+    if fotografo_id == owner.id:
+        raise HTTPException(status_code=400, detail="Não é possível excluir sua própria conta.")
+    fotografo = db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
+    if not fotografo:
+        raise HTTPException(status_code=404)
+
+    # Remove todos os álbuns e fotos do fotógrafo
+    foto_ids = []
+    for album in list(fotografo.albuns):
+        for foto in list(album.fotos):
+            foto_ids.append(foto.id)
+            try:
+                caminho_alta = os.path.join(DIRETORIO_ALTA_RES, foto.caminho_alta_res)
+                if os.path.exists(caminho_alta):
+                    os.remove(caminho_alta)
+                caminho_baixa = foto.caminho_baixa_res.lstrip('/')
+                if os.path.exists(caminho_baixa):
+                    os.remove(caminho_baixa)
+            except OSError as e:
+                print(f"⚠️  Erro ao remover arquivo da foto {foto.id}: {e}")
+            db.delete(foto)
+        db.delete(album)
+
+    # Remove itens de pedido ligados às fotos deletadas
+    if foto_ids:
+        db.query(ItemPedido).filter(ItemPedido.foto_id.in_(foto_ids)).delete(synchronize_session=False)
+
+    # Remove pedidos do fotógrafo
+    for pedido in db.query(Pedido).filter(Pedido.fotografo_id == fotografo_id).all():
+        db.delete(pedido)
+
+    db.delete(fotografo)
     db.commit()
     return RedirectResponse(url="/owner", status_code=303)
 

@@ -227,16 +227,24 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-5 py-4">
-                                        <form action="/owner/alterar-plano" method="POST" class="flex items-center gap-2">
-                                            <input type="hidden" name="fotografo_id" value="{{ f.id }}">
-                                            <select name="novo_plano" class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500">
-                                                <option value="starter" {{ 'selected' if f.plano_atual == 'starter' }}>starter</option>
-                                                <option value="pro" {{ 'selected' if f.plano_atual == 'pro' }}>pro</option>
-                                            </select>
-                                            <button type="submit" class="text-xs font-bold bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition-colors">
-                                                Salvar
-                                            </button>
-                                        </form>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <form action="/owner/alterar-plano" method="POST" class="flex items-center gap-2">
+                                                <input type="hidden" name="fotografo_id" value="{{ f.id }}">
+                                                <select name="novo_plano" class="bg-gray-800 border border-gray-700 text-gray-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500">
+                                                    <option value="starter" {{ 'selected' if f.plano_atual == 'starter' }}>starter</option>
+                                                    <option value="pro" {{ 'selected' if f.plano_atual == 'pro' }}>pro</option>
+                                                </select>
+                                                <button type="submit" class="text-xs font-bold bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+                                                    Salvar
+                                                </button>
+                                            </form>
+                                            <form action="/owner/excluir-fotografo" method="POST" onsubmit="return confirm('Excluir conta de {{ f.nome }}? Todos os álbuns e dados serão apagados permanentemente.')">
+                                                <input type="hidden" name="fotografo_id" value="{{ f.id }}">
+                                                <button type="submit" class="text-xs font-bold text-red-500 hover:text-red-400 border border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-800 hover:border-red-900 transition-colors">
+                                                    Excluir
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
