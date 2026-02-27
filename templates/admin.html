@@ -227,6 +227,27 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Categoria</label>
+                                <select id="categoria"
+                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                                    <option value="">— Selecione —</option>
+                                    <option value="Esportes">Esportes</option>
+                                    <option value="Festas">Festas</option>
+                                    <option value="Formaturas">Formaturas</option>
+                                    <option value="Casamentos">Casamentos</option>
+                                    <option value="Shows">Shows</option>
+                                    <option value="Corporativo">Corporativo</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade</label>
+                                <input type="text" id="cidade" placeholder="Ex: Salvador/BA"
+                                       class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">Preço Web (R$)</label>
                                 <input type="number" id="preco_baixa" required step="0.01" min="{{ preco_minimo_num }}" value="5.00"
                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
@@ -351,6 +372,10 @@
             formData.append('titulo_album', document.getElementById('titulo').value);
             formData.append('preco_baixa', document.getElementById('preco_baixa').value);
             formData.append('preco_alta', document.getElementById('preco_alta').value);
+            const categoria = document.getElementById('categoria').value;
+            const cidade = document.getElementById('cidade').value;
+            if (categoria) formData.append('categoria', categoria);
+            if (cidade) formData.append('cidade', cidade);
             for (let i = 0; i < arquivosInput.files.length; i++) {
                 formData.append('fotos', arquivosInput.files[i]);
             }

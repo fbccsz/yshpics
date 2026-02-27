@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ titulo_album }} | yshpics</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="yshpics">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+    <!-- Open Graph / Social Share -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ titulo_album }} | yshpics">
+    <meta property="og:description" content="Veja e baixe as fotos do evento {{ titulo_album }} em alta resolução. Pagamento via PIX instantâneo.">
+    {% if capa_url %}<meta property="og:image" content="{{ capa_url }}">{% endif %}
+    <meta property="og:url" content="{{ base_url }}/{{ album.hash_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ titulo_album }} | yshpics">
+    <meta name="twitter:description" content="Fotos do evento {{ titulo_album }} disponíveis para download em alta resolução.">
+    {% if capa_url %}<meta name="twitter:image" content="{{ capa_url }}">{% endif %}
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .btn-azul { background-color: #3b82f6; color: #fff; transition: all 0.2s; }
@@ -52,6 +72,15 @@
             <div id="header-multi-info" class="hidden text-lg font-black text-blue-600 tracking-tight">
                 SELEÇÃO RÁPIDA
             </div>
+
+            <!-- Facial recognition button (visible on non-multiselect mode) -->
+            <button id="btn-facial" onclick="abrirModalFacial()"
+                    title="Encontre suas fotos por reconhecimento facial"
+                    class="absolute right-4 p-2 text-gray-400 hover:text-blue-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </button>
         </header>
 
         <main class="w-full max-w-7xl mx-auto p-4 pb-32 flex-grow">
@@ -423,6 +452,142 @@
             modal.classList.add('opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
+
+        // ==========================================
+        // 5. RECONHECIMENTO FACIAL
+        // ==========================================
+        const ALBUM_HASH = '{{ album.hash_url }}';
+
+        function abrirModalFacial() {
+            document.getElementById('modal-facial').classList.remove('hidden');
+            document.getElementById('modal-facial').classList.add('flex');
+            // reset state
+            document.getElementById('facial-resultado').classList.add('hidden');
+            document.getElementById('facial-input').value = '';
+            document.getElementById('facial-preview').classList.add('hidden');
+            document.getElementById('btn-buscar-facial').disabled = true;
+        }
+
+        function fecharModalFacial() {
+            document.getElementById('modal-facial').classList.add('hidden');
+            document.getElementById('modal-facial').classList.remove('flex');
+        }
+
+        function previewSelfie(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const preview = document.getElementById('facial-preview');
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('hidden');
+            document.getElementById('btn-buscar-facial').disabled = false;
+        }
+
+        async function buscarPorFace() {
+            const input = document.getElementById('facial-input');
+            if (!input.files[0]) return;
+
+            const btn = document.getElementById('btn-buscar-facial');
+            const resultado = document.getElementById('facial-resultado');
+            btn.disabled = true;
+            btn.textContent = 'Analisando...';
+            resultado.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('selfie', input.files[0]);
+
+            try {
+                const resp = await fetch(`/api/facial/${ALBUM_HASH}`, { method: 'POST', body: formData });
+                const data = await resp.json();
+
+                if (!data.sucesso) {
+                    resultado.className = 'mt-3 text-sm text-red-600 font-semibold text-center';
+                    resultado.textContent = data.erro || 'Erro ao processar.';
+                    resultado.classList.remove('hidden');
+                    return;
+                }
+
+                if (data.fotos_com_voce.length === 0) {
+                    resultado.className = 'mt-3 text-sm text-amber-600 font-semibold text-center';
+                    resultado.textContent = 'Nenhuma foto sua foi encontrada neste álbum.';
+                    resultado.classList.remove('hidden');
+                    return;
+                }
+
+                // Highlight matching photos and hide others
+                const containers = document.querySelectorAll('.container-foto');
+                containers.forEach(c => {
+                    const fotoId = parseInt(c.getAttribute('data-id'));
+                    if (data.fotos_com_voce.includes(fotoId)) {
+                        c.style.display = '';
+                        c.style.outline = '3px solid #3b82f6';
+                    } else {
+                        c.style.display = 'none';
+                    }
+                });
+
+                resultado.className = 'mt-3 text-sm text-green-700 font-semibold text-center';
+                resultado.textContent = `✓ ${data.total} foto${data.total !== 1 ? 's' : ''} com você encontrada${data.total !== 1 ? 's' : ''}!`;
+                resultado.classList.remove('hidden');
+                fecharModalFacial();
+            } catch(e) {
+                resultado.className = 'mt-3 text-sm text-red-600 font-semibold text-center';
+                resultado.textContent = 'Erro de comunicação com o servidor.';
+                resultado.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Encontrar minhas fotos';
+            }
+        }
+
+        function limparFiltroPorFace() {
+            document.querySelectorAll('.container-foto').forEach(c => {
+                c.style.display = '';
+                c.style.outline = '';
+            });
+        }
+
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+        }
     </script>
+
+    <!-- Facial recognition modal -->
+    <div id="modal-facial" class="fixed inset-0 bg-black/60 z-[90] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-black text-gray-900 text-base">Encontrar minhas fotos</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Envie uma selfie e encontraremos você automaticamente</p>
+                </div>
+                <button onclick="fecharModalFacial()" class="text-gray-400 hover:text-gray-600 p-1 ml-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <label class="block cursor-pointer">
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-sm font-semibold text-gray-600">Clique para enviar sua selfie</p>
+                    <p class="text-xs text-gray-400 mt-1">Use uma foto frontal com boa iluminação</p>
+                    <img id="facial-preview" src="" class="hidden mt-3 mx-auto max-h-32 rounded-xl object-cover">
+                </div>
+                <input id="facial-input" type="file" accept="image/*" capture="user" class="hidden" onchange="previewSelfie(this)">
+            </label>
+
+            <div id="facial-resultado" class="hidden mt-3 text-sm font-semibold text-center"></div>
+
+            <button id="btn-buscar-facial" onclick="buscarPorFace()" disabled
+                    class="w-full mt-4 bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black py-3 rounded-xl text-sm uppercase tracking-wider transition-all active:scale-95">
+                Encontrar minhas fotos
+            </button>
+            <button onclick="limparFiltroPorFace(); fecharModalFacial();"
+                    class="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 font-semibold py-1 transition-colors">
+                Mostrar todas as fotos
+            </button>
+        </div>
+    </div>
 </body>
 </html>
