@@ -10,20 +10,23 @@ def gerar_cpf_valido():
         cpf.append(11 - val if val > 1 else 0)
     return ''.join(map(str, cpf))
 
-def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_interno, token_fotografo, taxa_plataforma):
-    """Gera cobrança com Split: dinheiro pro Fotógrafo, comissão pra você."""
-    
-    # Inicia o SDK com a chave do DONO da foto
-    sdk = mercadopago.SDK(token_fotografo)
-    nome_real = nome_cliente if len(nome_cliente.split()) > 1 else "João Silva"
-    
-    payment_data = {
+def _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_interno):
+    """Monta o payload base do pagamento."""
+    partes = nome_cliente.strip().split()
+    if len(partes) >= 2:
+        first_name = partes[0]
+        last_name = " ".join(partes[1:])
+    else:
+        first_name = "Cliente"
+        last_name = "yshpics"
+    return {
         "transaction_amount": float(valor_pedido),
         "description": f"Compra de Fotos - Pedido #{id_pedido_interno}",
         "payment_method_id": "pix",
         "payer": {
-            "email": email_cliente,
-            "first_name": nome_real,
+            "email": email_cliente if "@" in email_cliente else "cliente@yshpics.com",
+            "first_name": first_name,
+            "last_name": last_name,
             "identification": {
                 "type": "CPF",
                 "number": gerar_cpf_valido()
@@ -31,27 +34,49 @@ def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_inte
         }
     }
 
-    # A MÁGICA: Sua comissão vai aqui
+def gerar_cobranca_pix(valor_pedido, email_cliente, nome_cliente, id_pedido_interno, token_fotografo, taxa_plataforma):
+    """Gera cobrança PIX. Tenta com split de comissão; se falhar, tenta sem."""
+
+    sdk = mercadopago.SDK(token_fotografo)
+
+    payment_data = _criar_payment_data(valor_pedido, email_cliente, nome_cliente, id_pedido_interno)
+
+    # Tenta primeiro com application_fee (split marketplace)
     if taxa_plataforma > 0:
         payment_data["application_fee"] = float(taxa_plataforma)
 
-    request_options = mercadopago.config.RequestOptions()
-    request_options.custom_headers = {'x-idempotency-key': str(uuid.uuid4())}
-
-    try:
-        result = sdk.payment().create(payment_data, request_options)
-        pagamento = result.get("response", {})
-
-        if pagamento.get("status") == "pending":
+    def _tentar(dados):
+        opts = mercadopago.config.RequestOptions()
+        opts.custom_headers = {'x-idempotency-key': str(uuid.uuid4())}
+        result = sdk.payment().create(dados, opts)
+        resp = result.get("response", {})
+        if resp.get("status") == "pending":
             return {
                 "sucesso": True,
-                "txid": pagamento["id"],
-                "copia_cola": pagamento["point_of_interaction"]["transaction_data"]["qr_code"],
-                "qr_code_img": pagamento["point_of_interaction"]["transaction_data"]["qr_code_base64"]
+                "txid": resp["id"],
+                "copia_cola": resp["point_of_interaction"]["transaction_data"]["qr_code"],
+                "qr_code_img": resp["point_of_interaction"]["transaction_data"]["qr_code_base64"]
             }
-        else:
-            print("\n--- ERRO NO MERCADO PAGO ---", pagamento)
-            return {"sucesso": False, "erro": "Falha na API do Mercado Pago."}
+        return {"sucesso": False, "resp": resp}
+
+    try:
+        resultado = _tentar(payment_data)
+        if resultado["sucesso"]:
+            return resultado
+
+        # Se falhou com application_fee, tenta sem (conta não-marketplace)
+        if "application_fee" in payment_data:
+            print(f"⚠️  Falha com application_fee ({resultado['resp'].get('message','')}). Tentando sem split...")
+            payment_data_sem_split = {k: v for k, v in payment_data.items() if k != "application_fee"}
+            resultado2 = _tentar(payment_data_sem_split)
+            if resultado2["sucesso"]:
+                return resultado2
+            print("--- ERRO MERCADO PAGO (sem split) ---", resultado2["resp"])
+            return {"sucesso": False, "erro": resultado2["resp"].get("message", "Falha na API do Mercado Pago.")}
+
+        print("--- ERRO MERCADO PAGO ---", resultado["resp"])
+        return {"sucesso": False, "erro": resultado["resp"].get("message", "Falha na API do Mercado Pago.")}
+
     except Exception as e:
-        print(f"Erro de comunicação: {e}")
+        print(f"Erro de comunicação com Mercado Pago: {e}")
         return {"sucesso": False, "erro": str(e)}

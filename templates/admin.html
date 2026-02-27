@@ -22,20 +22,35 @@
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
         /* Site switcher */
+        .switcher-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 12px 5px 10px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%);
+            border: 1.5px solid #c7d2fe;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.10);
+            transition: all 0.2s; cursor: pointer; user-select: none;
+        }
+        .switcher-btn:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.18); border-color: #818cf8; }
+        .switcher-logo { font-weight: 900; font-size: 1.1rem; font-style: italic; letter-spacing: -0.03em; }
+        .switcher-logo .y { color: #1e293b; }
+        .switcher-logo .p { color: #3b82f6; }
+
         .site-switcher-dropdown {
-            display: none; position: absolute; top: calc(100% + 10px); left: 0;
-            background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.12); padding: 6px; min-width: 180px; z-index: 100;
+            display: none; position: absolute; top: calc(100% + 12px); left: 0;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 18px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.14); padding: 8px; min-width: 200px; z-index: 100;
         }
         .site-switcher-dropdown.open { display: block; animation: fadeIn 0.18s ease-out both; }
         .switcher-item {
-            display: flex; align-items: center; gap: 10px; padding: 9px 12px;
-            border-radius: 9px; cursor: pointer; font-size: 0.82rem; font-weight: 700;
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            border-radius: 12px; cursor: pointer; font-size: 0.83rem; font-weight: 700;
             color: #374151; transition: background 0.15s;
         }
         .switcher-item:hover { background: #f3f4f6; }
         .switcher-item.active { background: #eff6ff; color: #1d4ed8; }
-        .switcher-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .switcher-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .switcher-item-desc { font-size: 0.7rem; font-weight: 400; color: #9ca3af; line-height: 1; margin-top: 1px; }
 
         /* Page transition overlay */
         #page-transition {
@@ -44,20 +59,31 @@
         }
         #page-transition .pt-curtain {
             position: absolute; inset: 0;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1e1e2e 50%, #0a0a1a 100%);
+            background: linear-gradient(135deg, #0a0a14 0%, #13111c 40%, #0f0f1a 100%);
             transform: translateY(100%);
-            transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+            transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        #page-transition .pt-curtain::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.15) 0%, transparent 70%);
         }
         #page-transition.active .pt-curtain { transform: translateY(0); }
         #page-transition .pt-brand {
             position: relative; z-index: 1; text-align: center;
-            opacity: 0; transform: translateY(20px);
-            transition: opacity 0.3s ease 0.3s, transform 0.3s ease 0.3s;
+            opacity: 0; transform: translateY(24px) scale(0.96);
+            transition: opacity 0.35s ease 0.32s, transform 0.35s ease 0.32s;
         }
-        #page-transition.active .pt-brand { opacity: 1; transform: translateY(0); }
-        #page-transition .pt-brand span.pt-y { color: #fff; font-size: 2rem; font-weight: 900; font-style: italic; letter-spacing: -0.04em; }
-        #page-transition .pt-brand span.pt-dev { color: #6366f1; }
-        #page-transition .pt-brand p { color: #6b7280; font-size: 0.75rem; margin-top: 6px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+        #page-transition.active .pt-brand { opacity: 1; transform: translateY(0) scale(1); }
+        .pt-logo { font-size: 2.4rem; font-weight: 900; font-style: italic; letter-spacing: -0.05em; }
+        .pt-logo .pt-y { color: #fff; }
+        .pt-logo .pt-dev { color: #818cf8; }
+        .pt-logo .pt-me { color: #c7d2fe; }
+        .pt-tagline { color: #4b5563; font-size: 0.72rem; margin-top: 10px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; }
+        .pt-bar {
+            width: 0; height: 2px; background: linear-gradient(90deg, #6366f1, #818cf8);
+            border-radius: 2px; margin: 12px auto 0; transition: width 0.5s ease 0.5s;
+        }
+        #page-transition.active .pt-bar { width: 80px; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -66,20 +92,29 @@
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
             <div class="relative" id="logo-wrapper">
-                <button onclick="toggleSwitcher(event)" class="font-black text-2xl italic tracking-tight flex items-center gap-1 select-none focus:outline-none group" aria-label="Trocar site">
-                    <span class="text-black">ysh</span><span class="text-blue-500">pics</span>
-                    <svg class="w-3 h-3 text-gray-400 mt-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="switcher-arrow"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                <button onclick="toggleSwitcher(event)" class="switcher-btn focus:outline-none" aria-label="Trocar site">
+                    <span class="switcher-logo"><span class="y">ysh</span><span class="p">pics</span></span>
+                    <svg class="w-3 h-3 text-indigo-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="switcher-arrow"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div class="site-switcher-dropdown" id="site-dropdown">
+                    <div class="px-3 py-2 mb-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meus sites</p>
+                    </div>
                     <div class="switcher-item active" onclick="closeSwitcher()">
                         <span class="switcher-dot" style="background:#3b82f6;"></span>
-                        <span>yshpics</span>
-                        <svg class="w-3.5 h-3.5 ml-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        <div>
+                            <div>yshpics</div>
+                            <div class="switcher-item-desc">Galeria de fotos</div>
+                        </div>
+                        <svg class="w-3.5 h-3.5 ml-auto text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <div class="switcher-item" onclick="goToYshdev()">
                         <span class="switcher-dot" style="background:#6366f1;"></span>
-                        <span>yshdev.me</span>
-                        <svg class="w-3 h-3 ml-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        <div>
+                            <div>yshdev.me</div>
+                            <div class="switcher-item-desc">Portfólio &amp; projetos</div>
+                        </div>
+                        <svg class="w-3 h-3 ml-auto text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </div>
                 </div>
             </div>
@@ -361,7 +396,7 @@
             const overlay = document.getElementById('page-transition');
             overlay.style.pointerEvents = 'all';
             overlay.classList.add('active');
-            setTimeout(() => { window.location.href = 'https://yshdev.me'; }, 650);
+            setTimeout(() => { window.location.href = 'https://yshdev.me'; }, 700);
         }
     </script>
 
@@ -372,8 +407,9 @@
     <div id="page-transition">
         <div class="pt-curtain"></div>
         <div class="pt-brand">
-            <div><span class="pt-y">ysh</span><span class="pt-dev">dev</span><span class="pt-y">.me</span></div>
-            <p>Portfólio</p>
+            <div class="pt-logo"><span class="pt-y">ysh</span><span class="pt-dev">dev</span><span class="pt-me">.me</span></div>
+            <div class="pt-bar"></div>
+            <p class="pt-tagline">Portfólio &amp; Projetos</p>
         </div>
     </div>
 </body>

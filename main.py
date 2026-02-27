@@ -27,6 +27,9 @@ app = FastAPI()
 # Chave secreta para assinar cookies de sessão. Defina SESSION_SECRET no .env em produção.
 SESSION_SECRET = os.getenv("SESSION_SECRET", os.urandom(32).hex())
 
+# E-mail do dono da plataforma — define acesso ao painel master em /owner
+OWNER_EMAIL = os.getenv("OWNER_EMAIL", "")
+
 def _hash_senha(senha: str) -> str:
     return hashlib.sha256(senha.encode("utf-8")).hexdigest()
 
@@ -58,6 +61,13 @@ def get_fotografo_logado(request: Request, db: Session) -> "Fotografo | None":
     if fotografo_id is None:
         return None
     return db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
+
+def get_owner(request: Request, db: Session) -> "Fotografo | None":
+    """Retorna o fotógrafo logado somente se for o dono da plataforma."""
+    fotografo = get_fotografo_logado(request, db)
+    if fotografo and OWNER_EMAIL and fotografo.email == OWNER_EMAIL:
+        return fotografo
+    return None
 DIRETORIO_ALTA_RES = "./fotos_alta_res_seguras"
 DIRETORIO_BAIXA_RES = "./static/fotos_baixa_res"
 os.makedirs(DIRETORIO_ALTA_RES, exist_ok=True)
@@ -128,7 +138,7 @@ def comprar_foto(foto_id: int, nome: str, email: str, qualidade: str = 'alta', d
     if not pix["sucesso"]:
         novo_pedido.status_pagamento = "Cancelado"
         db.commit()
-        return {"sucesso": False, "erro": "Falha ao gerar o PIX no Mercado Pago"}
+        return {"sucesso": False, "erro": pix.get("erro", "Falha ao gerar o PIX no Mercado Pago")}
 
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
@@ -284,7 +294,7 @@ async def criar_pedido(dados: CriarPedidoIn, db: Session = Depends(get_db)):
     if not pix["sucesso"]:
         novo_pedido.status_pagamento = "Cancelado"
         db.commit()
-        return {"sucesso": False, "erro": "Falha ao gerar o PIX no Mercado Pago"}
+        return {"sucesso": False, "erro": pix.get("erro", "Falha ao gerar o PIX no Mercado Pago")}
 
     novo_pedido.pix_txid = pix["txid"]
     novo_pedido.pix_copia_cola = pix["copia_cola"]
@@ -427,6 +437,145 @@ async def processar_upload(
 
     db.commit()
     return {"sucesso": True, "mensagem": f"{fotos_cadastradas} fotos processadas!", "link_album": f"/{novo_album.hash_url}"}
+
+# ==========================================
+# PAINEL DO DONO DA PLATAFORMA
+# ==========================================
+
+@app.get("/owner", response_class=HTMLResponse)
+async def painel_dono(request: Request, db: Session = Depends(get_db)):
+    owner = get_owner(request, db)
+    if not owner:
+        return RedirectResponse(url="/login", status_code=303)
+
+    todos_fotografos = db.query(Fotografo).order_by(Fotografo.id.desc()).all()
+    todos_albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
+    todos_pedidos = db.query(Pedido).order_by(Pedido.data_pedido.desc()).all()
+    pedidos_pagos = [p for p in todos_pedidos if p.status_pagamento == "Pago"]
+
+    receita_total = sum(p.taxa_plataforma for p in pedidos_pagos)
+    volume_total = sum(p.valor_total for p in pedidos_pagos)
+
+    return templates.TemplateResponse("owner_admin.html", {
+        "request": request,
+        "owner": owner,
+        "fotografos": todos_fotografos,
+        "albuns": todos_albuns,
+        "pedidos": todos_pedidos[:30],
+        "pedidos_pagos": len(pedidos_pagos),
+        "receita_total": f"{receita_total:.2f}".replace('.', ','),
+        "volume_total": f"{volume_total:.2f}".replace('.', ','),
+    })
+
+@app.post("/owner/upload")
+async def owner_upload(
+    request: Request,
+    fotografo_id: int = Form(...),
+    titulo_album: str = Form(...),
+    preco_baixa: float = Form(...),
+    preco_alta: float = Form(...),
+    fotos: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    owner = get_owner(request, db)
+    if not owner:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    fotografo = db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
+    if not fotografo:
+        raise HTTPException(status_code=404, detail="Fotógrafo não encontrado")
+
+    hash_album = str(uuid.uuid4())[:8]
+    novo_album = Album(titulo=titulo_album, hash_url=hash_album, fotografo_id=fotografo.id)
+    db.add(novo_album)
+    db.flush()
+
+    fotos_cadastradas = 0
+    for arquivo in fotos:
+        if not arquivo.filename:
+            continue
+        extensao = arquivo.filename.split(".")[-1]
+        nome_base = str(uuid.uuid4())
+        nome_alta = f"{nome_base}_original.{extensao}"
+        nome_baixa = f"{nome_base}_vitrine.jpg"
+
+        caminho_alta = os.path.join(DIRETORIO_ALTA_RES, nome_alta)
+        caminho_baixa = os.path.join(DIRETORIO_BAIXA_RES, nome_baixa)
+
+        with open(caminho_alta, "wb") as buffer:
+            shutil.copyfileobj(arquivo.file, buffer)
+
+        try:
+            img = Image.open(caminho_alta)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            img.thumbnail((800, 800))
+            img.save(caminho_baixa, "JPEG", quality=70)
+        except Exception:
+            continue
+
+        nova_foto = Foto(
+            album_id=novo_album.id,
+            caminho_baixa_res=f"/static/fotos_baixa_res/{nome_baixa}",
+            caminho_alta_res=nome_alta,
+            preco_baixa=preco_baixa,
+            preco_alta=preco_alta,
+        )
+        db.add(nova_foto)
+        fotos_cadastradas += 1
+
+    db.commit()
+    return {"sucesso": True, "mensagem": f"{fotos_cadastradas} fotos processadas!", "link_album": f"/{novo_album.hash_url}"}
+
+@app.post("/owner/alterar-plano")
+async def owner_alterar_plano(
+    request: Request,
+    fotografo_id: int = Form(...),
+    novo_plano: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    owner = get_owner(request, db)
+    if not owner:
+        raise HTTPException(status_code=401)
+    if novo_plano not in ("starter", "pro"):
+        raise HTTPException(status_code=400, detail="Plano inválido")
+    fotografo = db.query(Fotografo).filter(Fotografo.id == fotografo_id).first()
+    if not fotografo:
+        raise HTTPException(status_code=404)
+    fotografo.plano_atual = novo_plano
+    db.commit()
+    return RedirectResponse(url="/owner", status_code=303)
+
+@app.post("/owner/excluir-album")
+async def owner_excluir_album(
+    request: Request,
+    album_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    owner = get_owner(request, db)
+    if not owner:
+        raise HTTPException(status_code=401)
+    album = db.query(Album).filter(Album.id == album_id).first()
+    if not album:
+        raise HTTPException(status_code=404)
+    # Remove fotos do disco e do banco
+    for foto in album.fotos:
+        for item in db.query(ItemPedido).filter(ItemPedido.foto_id == foto.id).all():
+            db.delete(item)
+        try:
+            caminho_alta = os.path.join(DIRETORIO_ALTA_RES, foto.caminho_alta_res)
+            if os.path.exists(caminho_alta):
+                os.remove(caminho_alta)
+            caminho_baixa = foto.caminho_baixa_res.lstrip('/')
+            if os.path.exists(caminho_baixa):
+                os.remove(caminho_baixa)
+        except Exception:
+            pass
+        db.delete(foto)
+    db.delete(album)
+    db.commit()
+    return RedirectResponse(url="/owner", status_code=303)
+
 
 @app.get("/{hash_url}", response_class=HTMLResponse)
 async def ver_album(request: Request, hash_url: str, db: Session = Depends(get_db)):
