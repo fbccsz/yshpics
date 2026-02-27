@@ -179,15 +179,22 @@
         }
         #page-transition.active .pt-bar { width: 80px; }
 
-        /* Filter pills */
-        .filter-pill {
-            display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px;
+        /* Filter dropdown */
+        #filtro-dropdown {
+            display: none; position: absolute; top: calc(100% + 8px); left: 0;
+            background: #fff; border: 1.5px solid #e5e7eb; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 16px; z-index: 100;
+            min-width: 300px;
+        }
+        #filtro-dropdown.open { display: block; }
+        .cat-pill {
+            display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
             border-radius: 50px; border: 1.5px solid #e5e7eb; background: #fff;
             font-size: 0.78rem; font-weight: 700; color: #374151; cursor: pointer;
             transition: all 0.18s; white-space: nowrap;
         }
-        .filter-pill:hover { border-color: #3b82f6; color: #2563eb; background: #eff6ff; }
-        .filter-pill.active { border-color: #3b82f6; background: #3b82f6; color: #fff; }
+        .cat-pill:hover { border-color: #3b82f6; color: #2563eb; background: #eff6ff; }
+        .cat-pill.active { border-color: #3b82f6; background: #3b82f6; color: #fff; }
 
         /* FAQ */
         .faq-item details summary { cursor: pointer; list-style: none; }
@@ -287,7 +294,7 @@
                 </svg>
                 <input type="text" id="input-busca" class="hero-search-input"
                        placeholder="Busque pelo seu evento (ex: Formatura, Show)..."
-                       autocomplete="off" oninput="filtrarAlbuns(); atualizarBotaoLimpar()">
+                       autocomplete="off" oninput="filtrarAlbuns(); atualizarBadge()">
             </div>
         </div>
     </section>
@@ -310,62 +317,52 @@
         </div>
     </div>
 
-    <!-- Advanced Filters -->
+    <!-- Filter button -->
     <div class="bg-white border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div class="flex items-center gap-2 overflow-x-auto pb-0.5" style="scrollbar-width:none;-ms-overflow-style:none;">
-            <span class="text-xs font-black text-gray-400 uppercase tracking-widest mr-1 flex-shrink-0 hidden sm:inline">Filtrar:</span>
-            <!-- Category filters -->
-            <button class="filter-pill active flex-shrink-0" data-filter-type="categoria" data-filter-val="" onclick="setFilter('categoria','',this)">Todos</button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="esportes" onclick="setFilter('categoria','esportes',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0021.5 5.5V3.935"></path></svg>
-                Esportes
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="festas" onclick="setFilter('categoria','festas',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-                Festas
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="formaturas" onclick="setFilter('categoria','formaturas',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
-                Formaturas
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="casamentos" onclick="setFilter('categoria','casamentos',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                Casamentos
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="shows" onclick="setFilter('categoria','shows',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                Shows
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="corporativo" onclick="setFilter('categoria','corporativo',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                Corporativo
-            </button>
-            <button class="filter-pill flex-shrink-0" data-filter-type="categoria" data-filter-val="outros" onclick="setFilter('categoria','outros',this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-                Outros
-            </button>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
+            <!-- Single filter button with dropdown -->
+            <div class="relative" id="filtro-wrapper">
+                <button id="btn-filtrar" onclick="toggleFiltroDropdown(event)"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-sm font-bold text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                        style="border: 1.5px solid #e5e7eb;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"></path></svg>
+                    <span id="btn-filtrar-label">Filtrar</span>
+                    <svg id="filtro-arrow" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
 
-            <!-- City filter (dynamic from albums) -->
-            {% set cidades = albuns | selectattr('cidade') | map(attribute='cidade') | unique | list %}
-            {% if cidades %}
-            <div class="w-px h-5 bg-gray-200 flex-shrink-0 hidden sm:block mx-1"></div>
-            <select id="filtro-cidade" onchange="setCidadeFilter(this.value)"
-                    class="filter-pill flex-shrink-0 pr-8 appearance-none bg-no-repeat cursor-pointer"
-                    style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\"); background-size:14px; background-position: right 8px center;">
-                <option value="">📍 Todas as cidades</option>
-                {% for cidade in cidades %}
-                <option value="{{ cidade | lower }}">{{ cidade }}</option>
-                {% endfor %}
-            </select>
-            {% endif %}
-
-            <!-- Clear filters button (hidden by default) -->
-            <button id="btn-limpar-filtros" onclick="limparFiltros()" class="hidden filter-pill flex-shrink-0 border-red-200 text-red-500 hover:border-red-400 hover:bg-red-50">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                Limpar
-            </button>
+                <!-- Dropdown panel -->
+                <div id="filtro-dropdown">
+                    <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Categoria</p>
+                    <div class="flex flex-wrap gap-1.5 mb-4">
+                        <button class="cat-pill active" data-filter-type="categoria" data-filter-val="" onclick="setFilter('categoria','',this)">Todos</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="esportes" onclick="setFilter('categoria','esportes',this)">⚽ Esportes</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="festas" onclick="setFilter('categoria','festas',this)">🎉 Festas</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="formaturas" onclick="setFilter('categoria','formaturas',this)">🎓 Formaturas</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="casamentos" onclick="setFilter('categoria','casamentos',this)">💍 Casamentos</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="shows" onclick="setFilter('categoria','shows',this)">🎵 Shows</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="corporativo" onclick="setFilter('categoria','corporativo',this)">🏢 Corporativo</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="outros" onclick="setFilter('categoria','outros',this)">• Outros</button>
+                    </div>
+                    {% set cidades = albuns | selectattr('cidade') | map(attribute='cidade') | unique | list %}
+                    {% if cidades %}
+                    <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Cidade</p>
+                    <select id="filtro-cidade" onchange="setCidadeFilter(this.value)"
+                            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 cursor-pointer">
+                        <option value="">📍 Todas as cidades</option>
+                        {% for cidade in cidades %}
+                        <option value="{{ cidade | lower }}">{{ cidade }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                    <button onclick="limparFiltros()" class="w-full text-xs font-bold text-red-500 hover:text-red-700 py-1.5 rounded-lg hover:bg-red-50 transition-all">
+                        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        Limpar filtros
+                    </button>
+                </div>
             </div>
+
+            <!-- Active filter badge -->
+            <span id="badge-filtro-ativo" class="hidden text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2.5 py-0.5"></span>
         </div>
     </div>
 
@@ -555,19 +552,35 @@
         let filtroCategoria = '';
         let filtroCidade = '';
 
+        function toggleFiltroDropdown(e) {
+            e.stopPropagation();
+            const dd = document.getElementById('filtro-dropdown');
+            const arrow = document.getElementById('filtro-arrow');
+            const isOpen = dd.classList.contains('open');
+            dd.classList.toggle('open', !isOpen);
+            arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+        }
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('filtro-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('filtro-dropdown').classList.remove('open');
+                document.getElementById('filtro-arrow').style.transform = '';
+            }
+        });
+
         function setFilter(tipo, valor, btn) {
             if (tipo === 'categoria') {
                 filtroCategoria = valor;
                 document.querySelectorAll('[data-filter-type="categoria"]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             }
-            atualizarBotaoLimpar();
+            atualizarBadge();
             filtrarAlbuns();
         }
 
         function setCidadeFilter(valor) {
             filtroCidade = valor.toLowerCase();
-            atualizarBotaoLimpar();
+            atualizarBadge();
             filtrarAlbuns();
         }
 
@@ -576,18 +589,32 @@
             filtroCidade = '';
             document.getElementById('input-busca').value = '';
             document.querySelectorAll('[data-filter-type="categoria"]').forEach(b => b.classList.remove('active'));
-            document.querySelector('[data-filter-val=""]').classList.add('active');
+            const todosBtn = document.querySelector('[data-filter-val=""]');
+            if (todosBtn) todosBtn.classList.add('active');
             const selectCidade = document.getElementById('filtro-cidade');
             if (selectCidade) selectCidade.value = '';
-            atualizarBotaoLimpar();
+            atualizarBadge();
             filtrarAlbuns();
         }
 
-        function atualizarBotaoLimpar() {
+        function atualizarBadge() {
             const termo = document.getElementById('input-busca').value.trim();
-            const temFiltro = termo !== '' || filtroCategoria !== '' || filtroCidade !== '';
-            const btn = document.getElementById('btn-limpar-filtros');
-            if (btn) btn.classList.toggle('hidden', !temFiltro);
+            const badge = document.getElementById('badge-filtro-ativo');
+            const partes = [];
+            if (filtroCategoria) partes.push(filtroCategoria.charAt(0).toUpperCase() + filtroCategoria.slice(1));
+            if (filtroCidade) partes.push(filtroCidade.charAt(0).toUpperCase() + filtroCidade.slice(1));
+            if (termo) partes.push(`"${termo}"`);
+            if (badge) {
+                if (partes.length) {
+                    badge.textContent = partes.join(' · ');
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+            // Update button label
+            const btnLabel = document.getElementById('btn-filtrar-label');
+            if (btnLabel) btnLabel.textContent = partes.length ? 'Filtrar (' + partes.length + ')' : 'Filtrar';
         }
 
         function filtrarAlbuns() {
@@ -625,7 +652,7 @@
                 if (msgEl) msgEl.textContent = `Nenhum resultado para ${partes.join(', ')}. Tente outro filtro.`;
                 semResultados.classList.toggle('hidden', visiveis > 0);
             }
-            atualizarBotaoLimpar();
+            atualizarBadge();
         }
 
         // Site switcher
