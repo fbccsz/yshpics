@@ -26,26 +26,210 @@
         </div>
     </nav>
 
-    <div class="relative bg-black h-[40vh] min-h-[300px] flex items-center justify-center overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
-             class="absolute inset-0 w-full h-full object-cover opacity-40" alt="Câmera">
-        <div class="relative z-10 text-center px-4">
-            <h1 class="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Reviva a sua melhor versão</h1>
-            <p class="text-lg text-gray-300 max-w-2xl mx-auto drop-shadow-md">Encontre o seu evento, selecione suas fotos e libere o arquivo original em alta resolução na hora.</p>
-        </div>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+    .hero-container {
+        position: relative;
+        width: 100%;
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+        background-color: #000;
+        overflow: hidden;
+    }
+
+    .hero-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Imagem de fundo temporária. Troque o link por uma foto épica sua depois! */
+        background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=2000&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Escurece a foto de fundo para o texto branco gritar na tela */
+        background: rgba(0, 0, 0, 0.65); 
+        z-index: 2;
+    }
+
+    .hero-fade {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 200px;
+        /* Faz o fundo sumir para o branco. Se o seu site for escuro, troque o #ffffff para #000000 */
+        background: linear-gradient(to bottom, transparent, #ffffff);
+        z-index: 3;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 4;
+        max-width: 900px;
+        padding: 0 20px;
+        margin-top: -40px;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        padding: 6px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 30px;
+    }
+
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 4.5rem;
+        color: #ffffff;
+        line-height: 1.1;
+        margin: 0 0 20px 0;
+        font-weight: 500;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .hero-title i {
+        font-style: italic;
+        color: #e2e8f0;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: #cbd5e1;
+        font-weight: 300;
+        margin-bottom: 45px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        max-width: 650px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-search-wrapper {
+        position: relative;
+        max-width: 650px;
+        margin: 0 auto;
+    }
+
+    .hero-search-input {
+        width: 100%;
+        padding: 22px 20px 22px 55px;
+        border-radius: 50px;
+        border: none;
+        font-size: 1.1rem;
+        color: #333;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .hero-search-input:focus {
+        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        transform: translateY(-2px);
+    }
+
+    .hero-search-icon {
+        position: absolute;
+        left: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 22px;
+        height: 22px;
+        color: #888;
+        pointer-events: none;
+    }
+
+    .hero-search-button {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        bottom: 8px;
+        padding: 0 35px;
+        border-radius: 50px;
+        border: none;
+        background-color: #111;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .hero-search-button:hover {
+        background-color: #333;
+    }
+
+    /* Ajustes para a tela do celular */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.8rem;
+        }
+        .hero-subtitle {
+            font-size: 1rem;
+            padding: 0 10px;
+        }
+        .hero-search-input {
+            padding: 18px 15px 18px 45px;
+            font-size: 0.95rem;
+        }
+        .hero-search-button {
+            padding: 0 20px;
+            font-size: 0.95rem;
+        }
+        .hero-search-icon {
+            left: 15px;
+            width: 18px;
+            height: 18px;
+        }
+    }
+</style>
+
+<section class="hero-container">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-fade"></div>
+
+    <div class="hero-content">
+        <div class="hero-badge">Fotografia Profissional de Eventos</div>
+        
+        <h1 class="hero-title">
+            Momentos capturados.<br>
+            <i>Memórias guardadas.</i>
+        </h1>
+        
+        <p class="hero-subtitle">Encontre suas fotos de eventos recentes, compre os originais em alta resolução e guarde para sempre.</p>
+        
+        <form action="/" method="GET" class="hero-search-wrapper">
+            <svg class="hero-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input type="text" id="input-busca" class="hero-search-input" placeholder="Busque pelo seu evento (ex: Formatura, Show)..." autocomplete="off" oninput="filtrarAlbuns()">
+        </form>
     </div>
+</section>
 
     <div class="max-w-7xl mx-auto px-4 py-8 w-full flex flex-col items-center">
-        <button onclick="toggleFiltro()" class="btn-azul px-6 py-2.5 rounded-full flex items-center gap-2 mb-4 shadow-md">
-            Filtros 
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>
-        </button>
-        
-        <div id="barra-busca" class="hidden w-full max-w-md mb-6 transition-all duration-300">
-            <input type="text" id="input-busca" onkeyup="filtrarAlbuns()" placeholder="Digite o nome do evento..." 
-                   class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 shadow-sm outline-none transition-colors">
-        </div>
-        
         <p class="text-sm font-bold text-gray-400 uppercase tracking-widest" id="texto-exibindo">Últimos eventos</p>
     </div>
 
@@ -84,9 +268,8 @@
     <footer class="bg-white border-t border-gray-200 mt-auto">
         <div class="max-w-7xl mx-auto py-8 px-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <p class="text-gray-500 text-sm font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
-            
             <a href="https://instagram.com/seu_perfil" target="_blank" class="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 <span class="font-bold">@yshpics</span>
             </a>
         </div>
