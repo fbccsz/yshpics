@@ -516,10 +516,13 @@
                 const saved = localStorage.getItem(CART_KEY);
                 if (!saved) return;
                 const data = JSON.parse(saved);
+                if (!data || typeof data !== 'object' || Array.isArray(data)) return;
                 for (const id of Object.keys(data)) {
+                    const item = data[id];
+                    if (!item || typeof item !== 'object' || !item.id || !item.src) continue;
                     const container = document.querySelector(`.container-foto[data-id="${id}"]`);
                     if (container) {
-                        fotosSelecionadas[id] = data[id];
+                        fotosSelecionadas[id] = item;
                         container.classList.add('selecionada');
                         const btn = container.querySelector('.check-btn');
                         btn.classList.add('bg-blue-500', 'border-transparent');

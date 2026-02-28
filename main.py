@@ -595,9 +595,10 @@ async def excluir_album_proprio(
     album = db.query(Album).filter(Album.id == album_id, Album.fotografo_id == fotografo.id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Álbum não encontrado")
+    foto_ids = [f.id for f in album.fotos]
+    if foto_ids:
+        db.query(ItemPedido).filter(ItemPedido.foto_id.in_(foto_ids)).delete(synchronize_session=False)
     for foto in album.fotos:
-        for item in db.query(ItemPedido).filter(ItemPedido.foto_id == foto.id).all():
-            db.delete(item)
         try:
             caminho_alta = os.path.join(DIRETORIO_ALTA_RES, foto.caminho_alta_res)
             if os.path.exists(caminho_alta):
