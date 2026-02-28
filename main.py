@@ -273,7 +273,7 @@ async def mercado_pago_webhook(request: Request, db: Session = Depends(get_db)):
 async def landing_page(request: Request, db: Session = Depends(get_db)):
     albuns = db.query(Album).order_by(Album.data_evento.desc()).all()
     fotografo = get_fotografo_logado(request, db)
-    return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns, "fotografo": fotografo})
+    return templates.TemplateResponse("home.html", {"request": request, "albuns": albuns, "fotografo": fotografo, "now": datetime.utcnow()})
 
 # ==========================================
 # AUTENTICAÇÃO (Login / Cadastro / Logout)
@@ -581,6 +581,36 @@ async def configurar_mp(request: Request, mp_token: str = Form(...), db: Session
     if fotografo:
         fotografo.mp_access_token = mp_token
         db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+@app.post("/api/excluir-album")
+async def excluir_album_proprio(
+    request: Request,
+    album_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    fotografo = get_fotografo_logado(request, db)
+    if not fotografo:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    album = db.query(Album).filter(Album.id == album_id, Album.fotografo_id == fotografo.id).first()
+    if not album:
+        raise HTTPException(status_code=404, detail="Álbum não encontrado")
+    foto_ids = [f.id for f in album.fotos]
+    if foto_ids:
+        db.query(ItemPedido).filter(ItemPedido.foto_id.in_(foto_ids)).delete(synchronize_session=False)
+    for foto in album.fotos:
+        try:
+            caminho_alta = os.path.join(DIRETORIO_ALTA_RES, foto.caminho_alta_res)
+            if os.path.exists(caminho_alta):
+                os.remove(caminho_alta)
+            caminho_baixa = foto.caminho_baixa_res.lstrip('/')
+            if os.path.exists(caminho_baixa):
+                os.remove(caminho_baixa)
+        except Exception:
+            pass
+        db.delete(foto)
+    db.delete(album)
+    db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
 @app.post("/api/upload")

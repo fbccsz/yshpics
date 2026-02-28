@@ -18,7 +18,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="yshpics | Cobertura Fotográfica">
     <meta property="og:description" content="Encontre suas fotos de eventos em segundos e baixe em alta resolução. Pagamento via PIX instantâneo.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop">
     <meta property="og:url" content="https://yshpics.com">
     <meta name="twitter:card" content="summary_large_image">
 
@@ -34,7 +34,7 @@
         }
         .hero-bg {
             position: absolute; inset: 0;
-            background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=2000&auto=format&fit=crop');
+            background-image: url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2000&auto=format&fit=crop');
             background-size: cover; background-position: center; z-index: 1;
             animation: heroZoom 20s ease-in-out infinite alternate;
         }
@@ -201,6 +201,20 @@
         .faq-item details summary::-webkit-details-marker { display: none; }
         .faq-item details[open] .faq-icon { transform: rotate(45deg); }
         .faq-icon { transition: transform 0.2s; }
+
+        /* Dark mode */
+        .dark body { background: #0f172a; color: #e2e8f0; }
+        .dark .bg-white { background: #1e293b !important; }
+        .dark .bg-gray-50 { background: #0f172a !important; }
+        .dark .text-gray-900 { color: #f1f5f9 !important; }
+        .dark .text-gray-700 { color: #cbd5e1 !important; }
+        .dark .text-gray-500 { color: #94a3b8 !important; }
+        .dark .text-gray-400 { color: #64748b !important; }
+        .dark .border-gray-200 { border-color: #334155 !important; }
+        .dark .border-gray-100 { border-color: #1e293b !important; }
+        .dark nav.bg-white\/95 { background: rgba(15,23,42,0.95) !important; }
+        .dark .stats-strip { background: #1e293b; border-color: #334155; }
+        .dark .card-inner { background: #1e293b; border-color: #334155; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -269,6 +283,9 @@
                     Entrar
                 </a>
                 {% endif %}
+                <button id="btn-dark" onclick="toggleDarkMode()" class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" title="Modo escuro">
+                    <svg id="icon-dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
             </div>
         </div>
     </nav>
@@ -335,13 +352,13 @@
                     <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Categoria</p>
                     <div class="flex flex-wrap gap-1.5 mb-4">
                         <button class="cat-pill active" data-filter-type="categoria" data-filter-val="" onclick="setFilter('categoria','',this)">Todos</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="esportes" onclick="setFilter('categoria','esportes',this)">⚽ Esportes</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="festas" onclick="setFilter('categoria','festas',this)">🎉 Festas</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="formaturas" onclick="setFilter('categoria','formaturas',this)">🎓 Formaturas</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="casamentos" onclick="setFilter('categoria','casamentos',this)">💍 Casamentos</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="shows" onclick="setFilter('categoria','shows',this)">🎵 Shows</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="corporativo" onclick="setFilter('categoria','corporativo',this)">🏢 Corporativo</button>
-                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="outros" onclick="setFilter('categoria','outros',this)">• Outros</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="esportes" onclick="setFilter('categoria','esportes',this)">Esportes</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="festas" onclick="setFilter('categoria','festas',this)">Festas</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="formaturas" onclick="setFilter('categoria','formaturas',this)">Formaturas</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="casamentos" onclick="setFilter('categoria','casamentos',this)">Casamentos</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="shows" onclick="setFilter('categoria','shows',this)">Shows</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="corporativo" onclick="setFilter('categoria','corporativo',this)">Corporativo</button>
+                        <button class="cat-pill" data-filter-type="categoria" data-filter-val="outros" onclick="setFilter('categoria','outros',this)">Outros</button>
                     </div>
                     {% set cidades = albuns | selectattr('cidade') | map(attribute='cidade') | unique | list %}
                     {% if cidades %}
@@ -412,17 +429,29 @@
                             {{ album.categoria }}
                         </div>
                         {% endif %}
+                        <!-- New badge -->
+                        {% if album.data_evento and (now.date() - album.data_evento.date()).days <= 7 and (now.date() - album.data_evento.date()).days >= 0 %}
+                        <div class="absolute top-3" style="right: 70px;">
+                            <span class="bg-emerald-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide">Novo</span>
+                        </div>
+                        {% endif %}
                         <!-- Bottom title overlay -->
                         <div class="absolute bottom-0 left-0 right-0 p-3">
                             <h3 class="font-black text-white text-sm leading-tight drop-shadow-lg">{{ album.titulo }}</h3>
                         </div>
                     </div>
-                    <div class="p-3.5 flex items-center justify-between">
-                        <p class="text-xs text-gray-400 flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            {{ album.cidade or 'Salvador / BA' }}
+                    <div class="p-3.5">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <p class="text-xs text-gray-400 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                {{ album.cidade or 'Salvador / BA' }}
+                            </p>
+                            <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">Ver fotos →</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            {% if album.fotografo and album.fotografo.nome %}{{ album.fotografo.nome }}{% else %}<span class="italic">Fotógrafo</span>{% endif %}
                         </p>
-                        <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">Ver fotos →</span>
                     </div>
                 </div>
             </a>
@@ -539,6 +568,11 @@
     <footer class="bg-white border-t border-gray-200">
         <div class="max-w-7xl mx-auto py-7 px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
             <p class="text-gray-400 text-xs font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+                <a href="#termos" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;" class="hover:text-blue-500 transition-colors">Termos de Uso</a>
+                <span>·</span>
+                <a href="#privacidade" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;" class="hover:text-blue-500 transition-colors">Política de Privacidade</a>
+            </div>
             <a href="https://instagram.com/yshpics" target="_blank" rel="noopener"
                class="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors text-sm font-bold">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -546,6 +580,25 @@
             </a>
         </div>
     </footer>
+
+    <!-- Terms Modal -->
+    <div id="modal-termos" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 fade-in-up max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-black text-gray-900 text-base">Termos de Uso &amp; Política de Reembolso</h3>
+                <button onclick="document.getElementById('modal-termos').classList.add('hidden');document.getElementById('modal-termos').classList.remove('flex');" class="text-gray-400 hover:text-gray-600 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="text-sm text-gray-600 space-y-3">
+                <p><strong class="text-gray-900">1. Produto Digital</strong><br>As fotos adquiridas na yshpics são produtos digitais entregues via link de download. Após a confirmação do pagamento via PIX, o link é enviado para o e-mail informado e fica disponível por 7 dias.</p>
+                <p><strong class="text-gray-900">2. Política de Reembolso</strong><br>Em caso de falha no download ou foto incorreta, entre em contato através do Instagram @yshpics em até 48 horas após a compra. Analisaremos cada caso individualmente e, se confirmado o erro, realizaremos o reenvio ou reembolso integral.</p>
+                <p><strong class="text-gray-900">3. Direitos de Imagem</strong><br>As fotos são licenciadas para uso pessoal. É proibida a revenda, distribuição comercial ou alteração das imagens sem autorização do fotógrafo.</p>
+                <p><strong class="text-gray-900">4. Privacidade</strong><br>Coletamos apenas nome e e-mail para processamento do pedido. Não compartilhamos dados com terceiros além do Mercado Pago para processamento do pagamento.</p>
+                <p><strong class="text-gray-900">5. Reconhecimento Facial</strong><br>O recurso de reconhecimento facial é opcional e a selfie enviada é processada apenas para busca nas fotos do álbum, não sendo armazenada em nossos servidores.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ── Active filters state ──
@@ -703,6 +756,25 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+        }
+
+        // Dark mode
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDark ? '1' : '0');
+            updateDarkIcon(isDark);
+        }
+        function updateDarkIcon(isDark) {
+            const icon = document.getElementById('icon-dark');
+            if (isDark) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+            } else {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+            }
+        }
+        if (localStorage.getItem('darkMode') === '1') {
+            document.documentElement.classList.add('dark');
+            updateDarkIcon(true);
         }
     </script>
 </body>

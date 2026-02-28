@@ -246,78 +246,178 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">Cidade</label>
-                                <select id="cidade"
+                                <label class="block text-xs font-semibold text-gray-600 mb-1.5" for="cidade">Cidade</label>
+                                <input type="text" id="cidade" list="lista-cidades" placeholder="Ex: Salvador/BA"
                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition-all">
-                                    <option value="">Selecione a cidade...</option>
-                                    <optgroup label="Bahia">
-                                        <option value="Salvador/BA">Salvador/BA</option>
-                                        <option value="Feira de Santana/BA">Feira de Santana/BA</option>
-                                        <option value="Vitória da Conquista/BA">Vitória da Conquista/BA</option>
-                                        <option value="Camaçari/BA">Camaçari/BA</option>
-                                        <option value="Itabuna/BA">Itabuna/BA</option>
-                                        <option value="Juazeiro/BA">Juazeiro/BA</option>
-                                        <option value="Lauro de Freitas/BA">Lauro de Freitas/BA</option>
-                                        <option value="Ilhéus/BA">Ilhéus/BA</option>
-                                        <option value="Jequié/BA">Jequié/BA</option>
-                                        <option value="Teixeira de Freitas/BA">Teixeira de Freitas/BA</option>
-                                        <option value="Barreiras/BA">Barreiras/BA</option>
-                                        <option value="Porto Seguro/BA">Porto Seguro/BA</option>
-                                        <option value="Paulo Afonso/BA">Paulo Afonso/BA</option>
-                                        <option value="Simões Filho/BA">Simões Filho/BA</option>
-                                        <option value="Alagoinhas/BA">Alagoinhas/BA</option>
-                                    </optgroup>
-                                    <optgroup label="São Paulo">
-                                        <option value="São Paulo/SP">São Paulo/SP</option>
-                                        <option value="Campinas/SP">Campinas/SP</option>
-                                        <option value="Santos/SP">Santos/SP</option>
-                                        <option value="Ribeirão Preto/SP">Ribeirão Preto/SP</option>
-                                        <option value="São Bernardo do Campo/SP">São Bernardo do Campo/SP</option>
-                                        <option value="Santo André/SP">Santo André/SP</option>
-                                        <option value="Osasco/SP">Osasco/SP</option>
-                                        <option value="Sorocaba/SP">Sorocaba/SP</option>
-                                    </optgroup>
-                                    <optgroup label="Rio de Janeiro">
-                                        <option value="Rio de Janeiro/RJ">Rio de Janeiro/RJ</option>
-                                        <option value="Niterói/RJ">Niterói/RJ</option>
-                                        <option value="Nova Iguaçu/RJ">Nova Iguaçu/RJ</option>
-                                        <option value="Duque de Caxias/RJ">Duque de Caxias/RJ</option>
-                                        <option value="São Gonçalo/RJ">São Gonçalo/RJ</option>
-                                    </optgroup>
-                                    <optgroup label="Minas Gerais">
-                                        <option value="Belo Horizonte/MG">Belo Horizonte/MG</option>
-                                        <option value="Contagem/MG">Contagem/MG</option>
-                                        <option value="Uberlândia/MG">Uberlândia/MG</option>
-                                        <option value="Betim/MG">Betim/MG</option>
-                                        <option value="Juiz de Fora/MG">Juiz de Fora/MG</option>
-                                    </optgroup>
-                                    <optgroup label="Nordeste">
-                                        <option value="Fortaleza/CE">Fortaleza/CE</option>
-                                        <option value="Recife/PE">Recife/PE</option>
-                                        <option value="Maceió/AL">Maceió/AL</option>
-                                        <option value="Natal/RN">Natal/RN</option>
-                                        <option value="Teresina/PI">Teresina/PI</option>
-                                        <option value="João Pessoa/PB">João Pessoa/PB</option>
-                                        <option value="São Luís/MA">São Luís/MA</option>
-                                        <option value="Aracaju/SE">Aracaju/SE</option>
-                                    </optgroup>
-                                    <optgroup label="Centro-Oeste e Norte">
-                                        <option value="Brasília/DF">Brasília/DF</option>
-                                        <option value="Goiânia/GO">Goiânia/GO</option>
-                                        <option value="Campo Grande/MS">Campo Grande/MS</option>
-                                        <option value="Cuiabá/MT">Cuiabá/MT</option>
-                                        <option value="Manaus/AM">Manaus/AM</option>
-                                        <option value="Belém/PA">Belém/PA</option>
-                                    </optgroup>
-                                    <optgroup label="Sul">
-                                        <option value="Curitiba/PR">Curitiba/PR</option>
-                                        <option value="Porto Alegre/RS">Porto Alegre/RS</option>
-                                        <option value="Florianópolis/SC">Florianópolis/SC</option>
-                                        <option value="Joinville/SC">Joinville/SC</option>
-                                        <option value="Londrina/PR">Londrina/PR</option>
-                                        <option value="Maringá/PR">Maringá/PR</option>
-                                    </optgroup>
-                                </select>
+                                <datalist id="lista-cidades">
+                                    <!-- Bahia -->
+                                    <option value="Salvador/BA">
+                                    <option value="Feira de Santana/BA">
+                                    <option value="Vitória da Conquista/BA">
+                                    <option value="Camaçari/BA">
+                                    <option value="Itabuna/BA">
+                                    <option value="Juazeiro/BA">
+                                    <option value="Lauro de Freitas/BA">
+                                    <option value="Ilhéus/BA">
+                                    <option value="Jequié/BA">
+                                    <option value="Teixeira de Freitas/BA">
+                                    <option value="Barreiras/BA">
+                                    <option value="Porto Seguro/BA">
+                                    <option value="Paulo Afonso/BA">
+                                    <option value="Simões Filho/BA">
+                                    <option value="Alagoinhas/BA">
+                                    <option value="Valença/BA">
+                                    <option value="Eunápolis/BA">
+                                    <!-- São Paulo -->
+                                    <option value="São Paulo/SP">
+                                    <option value="Campinas/SP">
+                                    <option value="Santos/SP">
+                                    <option value="Ribeirão Preto/SP">
+                                    <option value="São Bernardo do Campo/SP">
+                                    <option value="Santo André/SP">
+                                    <option value="Osasco/SP">
+                                    <option value="Sorocaba/SP">
+                                    <option value="Guarulhos/SP">
+                                    <option value="São José dos Campos/SP">
+                                    <option value="Mogi das Cruzes/SP">
+                                    <option value="Piracicaba/SP">
+                                    <option value="Bauru/SP">
+                                    <option value="Jundiaí/SP">
+                                    <option value="Franca/SP">
+                                    <option value="Limeira/SP">
+                                    <option value="Taubaté/SP">
+                                    <option value="Carapicuíba/SP">
+                                    <option value="São Vicente/SP">
+                                    <option value="Presidente Prudente/SP">
+                                    <!-- Rio de Janeiro -->
+                                    <option value="Rio de Janeiro/RJ">
+                                    <option value="Niterói/RJ">
+                                    <option value="Nova Iguaçu/RJ">
+                                    <option value="Duque de Caxias/RJ">
+                                    <option value="São Gonçalo/RJ">
+                                    <option value="Belford Roxo/RJ">
+                                    <option value="Campos dos Goytacazes/RJ">
+                                    <option value="Petrópolis/RJ">
+                                    <option value="Volta Redonda/RJ">
+                                    <option value="Macaé/RJ">
+                                    <!-- Minas Gerais -->
+                                    <option value="Belo Horizonte/MG">
+                                    <option value="Contagem/MG">
+                                    <option value="Uberlândia/MG">
+                                    <option value="Betim/MG">
+                                    <option value="Juiz de Fora/MG">
+                                    <option value="Montes Claros/MG">
+                                    <option value="Ribeirão das Neves/MG">
+                                    <option value="Uberaba/MG">
+                                    <option value="Governador Valadares/MG">
+                                    <option value="Ipatinga/MG">
+                                    <option value="Sete Lagoas/MG">
+                                    <option value="Divinópolis/MG">
+                                    <option value="Santa Luzia/MG">
+                                    <!-- Ceará -->
+                                    <option value="Fortaleza/CE">
+                                    <option value="Caucaia/CE">
+                                    <option value="Juazeiro do Norte/CE">
+                                    <option value="Maracanaú/CE">
+                                    <option value="Sobral/CE">
+                                    <option value="Crato/CE">
+                                    <!-- Pernambuco -->
+                                    <option value="Recife/PE">
+                                    <option value="Caruaru/PE">
+                                    <option value="Olinda/PE">
+                                    <option value="Petrolina/PE">
+                                    <option value="Paulista/PE">
+                                    <!-- Alagoas -->
+                                    <option value="Maceió/AL">
+                                    <option value="Arapiraca/AL">
+                                    <!-- Rio Grande do Norte -->
+                                    <option value="Natal/RN">
+                                    <option value="Mossoró/RN">
+                                    <option value="Parnamirim/RN">
+                                    <!-- Piauí -->
+                                    <option value="Teresina/PI">
+                                    <option value="Parnaíba/PI">
+                                    <!-- Paraíba -->
+                                    <option value="João Pessoa/PB">
+                                    <option value="Campina Grande/PB">
+                                    <!-- Maranhão -->
+                                    <option value="São Luís/MA">
+                                    <option value="Imperatriz/MA">
+                                    <!-- Sergipe -->
+                                    <option value="Aracaju/SE">
+                                    <option value="Nossa Senhora do Socorro/SE">
+                                    <!-- Rio Grande do Sul -->
+                                    <option value="Porto Alegre/RS">
+                                    <option value="Caxias do Sul/RS">
+                                    <option value="Canoas/RS">
+                                    <option value="Pelotas/RS">
+                                    <option value="Santa Maria/RS">
+                                    <option value="Gravataí/RS">
+                                    <option value="Viamão/RS">
+                                    <option value="Novo Hamburgo/RS">
+                                    <option value="São Leopoldo/RS">
+                                    <!-- Paraná -->
+                                    <option value="Curitiba/PR">
+                                    <option value="Londrina/PR">
+                                    <option value="Maringá/PR">
+                                    <option value="Ponta Grossa/PR">
+                                    <option value="Cascavel/PR">
+                                    <option value="São José dos Pinhais/PR">
+                                    <option value="Foz do Iguaçu/PR">
+                                    <option value="Colombo/PR">
+                                    <!-- Santa Catarina -->
+                                    <option value="Florianópolis/SC">
+                                    <option value="Joinville/SC">
+                                    <option value="Blumenau/SC">
+                                    <option value="São José/SC">
+                                    <option value="Chapecó/SC">
+                                    <option value="Itajaí/SC">
+                                    <option value="Criciúma/SC">
+                                    <!-- Goiás -->
+                                    <option value="Goiânia/GO">
+                                    <option value="Aparecida de Goiânia/GO">
+                                    <option value="Anápolis/GO">
+                                    <option value="Rio Verde/GO">
+                                    <!-- Mato Grosso do Sul -->
+                                    <option value="Campo Grande/MS">
+                                    <option value="Dourados/MS">
+                                    <option value="Três Lagoas/MS">
+                                    <!-- Mato Grosso -->
+                                    <option value="Cuiabá/MT">
+                                    <option value="Várzea Grande/MT">
+                                    <option value="Rondonópolis/MT">
+                                    <option value="Sinop/MT">
+                                    <!-- Amazonas -->
+                                    <option value="Manaus/AM">
+                                    <option value="Parintins/AM">
+                                    <!-- Pará -->
+                                    <option value="Belém/PA">
+                                    <option value="Ananindeua/PA">
+                                    <option value="Santarém/PA">
+                                    <option value="Marabá/PA">
+                                    <!-- Espírito Santo -->
+                                    <option value="Vitória/ES">
+                                    <option value="Vila Velha/ES">
+                                    <option value="Serra/ES">
+                                    <option value="Cariacica/ES">
+                                    <!-- Brasília / DF -->
+                                    <option value="Brasília/DF">
+                                    <option value="Ceilândia/DF">
+                                    <option value="Taguatinga/DF">
+                                    <option value="Samambaia/DF">
+                                    <!-- Rondônia -->
+                                    <option value="Porto Velho/RO">
+                                    <option value="Ji-Paraná/RO">
+                                    <!-- Tocantins -->
+                                    <option value="Palmas/TO">
+                                    <option value="Araguaína/TO">
+                                    <!-- Acre -->
+                                    <option value="Rio Branco/AC">
+                                    <!-- Roraima -->
+                                    <option value="Boa Vista/RR">
+                                    <!-- Amapá -->
+                                    <option value="Macapá/AP">
+                                </datalist>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
@@ -413,6 +513,10 @@
                                         class="text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                                     Copiar
                                 </button>
+                                <button onclick="confirmarExclusaoAlbum({{ album.id }}, '{{ album.titulo }}')"
+                                        class="text-xs font-semibold text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                                    Excluir
+                                </button>
                             </div>
                         </li>
                         {% endfor %}
@@ -485,6 +589,21 @@
             }).catch(() => {
                 showToast('Não foi possível copiar o link.');
             });
+        }
+
+        function confirmarExclusaoAlbum(albumId, titulo) {
+            if (!confirm('Excluir álbum "' + titulo + '"? Esta ação não pode ser desfeita.')) return;
+            showToast('Excluindo...');
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/excluir-album';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'album_id';
+            input.value = albumId;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function showToast(msg) {
