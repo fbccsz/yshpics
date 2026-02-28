@@ -60,11 +60,16 @@
 
     <div id="tela-galeria" class="flex flex-col min-h-screen w-full">
         
-        <header id="main-header" class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 h-16 flex items-center justify-center shadow-sm transition-colors duration-300">
+        <header id="main-header" class="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 min-h-[64px] py-2 flex flex-col items-center justify-center shadow-sm transition-colors duration-300">
             <a href="/" id="btn-voltar" class="absolute left-4 p-2 text-gray-400 hover:text-blue-500 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </a>
-            <h1 id="header-title" class="text-lg font-black uppercase tracking-tight truncate max-w-[70%]">{{ titulo_album }}</h1>
+            <h1 id="header-title" class="text-base font-black uppercase tracking-tight truncate max-w-[70%]">{{ titulo_album }}</h1>
+            <div id="event-subtitle" class="flex items-center gap-2 text-[11px] text-gray-400 mt-0.5">
+                {% if album.data_evento %}<span>{{ album.data_evento.strftime('%d/%m/%Y') }}</span>{% endif %}
+                {% if album.cidade %}<span>·</span><span>{{ album.cidade }}</span>{% endif %}
+                {% if album.categoria %}<span>·</span><span class="capitalize">{{ album.categoria }}</span>{% endif %}
+            </div>
 
             <button id="btn-fechar-multi" onclick="sairMultiSelecao()" class="hidden absolute left-4 p-2 text-blue-600 hover:text-blue-800 transition-colors items-center gap-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -76,12 +81,21 @@
             <!-- Facial recognition button (visible on non-multiselect mode) -->
             <button id="btn-facial" onclick="abrirModalFacial()"
                     title="Encontre suas fotos por reconhecimento facial"
-                    class="absolute right-4 p-2 text-gray-400 hover:text-blue-500 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="absolute right-4 flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-xs px-3 py-1.5 rounded-full transition-colors border border-blue-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
+                <span class="hidden sm:inline">Encontrar-me</span>
             </button>
         </header>
+
+        <div class="w-full max-w-7xl mx-auto px-4 pt-3 pb-1">
+            <nav class="flex items-center gap-1.5 text-xs text-gray-400">
+                <a href="/" class="hover:text-blue-500 transition-colors font-medium">yshpics</a>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                <span class="text-gray-600 font-semibold truncate max-w-[200px]">{{ titulo_album }}</span>
+            </nav>
+        </div>
 
         <main class="w-full max-w-7xl mx-auto p-4 pb-32 flex-grow">
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4" id="galeria-container">
@@ -290,6 +304,7 @@
             if (totalQtd === 0 && modoMultiSelecao) {
                 sairMultiSelecao();
             }
+            salvarCarrinho();
         }
 
         function entrarMultiSelecao() {
@@ -445,8 +460,10 @@
                 });
                 const resultado = await resposta.json();
 
-                if (resultado.sucesso) window.location.replace(`/pagamento/${resultado.pedido_id}`);
-                else {
+                if (resultado.sucesso) {
+                    localStorage.removeItem(CART_KEY);
+                    window.location.replace(`/pagamento/${resultado.pedido_id}`);
+                } else {
                     mostrarErroPix(resultado.erro || "Tente novamente.");
                     btn.innerHTML = textoOriginal;
                     btn.disabled = false;
@@ -488,6 +505,36 @@
         // 5. RECONHECIMENTO FACIAL
         // ==========================================
         const ALBUM_HASH = '{{ album.hash_url }}';
+        const CART_KEY = 'yshpics_cart_' + ALBUM_HASH;
+
+        function salvarCarrinho() {
+            localStorage.setItem(CART_KEY, JSON.stringify(fotosSelecionadas));
+        }
+
+        function carregarCarrinho() {
+            try {
+                const saved = localStorage.getItem(CART_KEY);
+                if (!saved) return;
+                const data = JSON.parse(saved);
+                for (const id of Object.keys(data)) {
+                    const container = document.querySelector(`.container-foto[data-id="${id}"]`);
+                    if (container) {
+                        fotosSelecionadas[id] = data[id];
+                        container.classList.add('selecionada');
+                        const btn = container.querySelector('.check-btn');
+                        btn.classList.add('bg-blue-500', 'border-transparent');
+                        btn.classList.remove('bg-black/30', 'border-white/40');
+                        btn.querySelector('svg').classList.remove('scale-75', 'opacity-0');
+                        btn.querySelector('svg').classList.add('scale-100', 'opacity-100');
+                    }
+                }
+                const totalQtd = Object.keys(fotosSelecionadas).length;
+                if (totalQtd > 0) {
+                    document.getElementById('qtd-galeria').innerText = totalQtd;
+                    document.getElementById('btn-avancar').disabled = false;
+                }
+            } catch(e) { localStorage.removeItem(CART_KEY); }
+        }
 
         function abrirModalFacial() {
             document.getElementById('modal-facial').classList.remove('hidden');
@@ -581,6 +628,7 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/static/sw.js').catch(() => {});
         }
+        carregarCarrinho();
     </script>
 
     <!-- Facial recognition modal -->
@@ -605,7 +653,7 @@
                     <p class="text-xs text-gray-400 mt-1">Use uma foto frontal com boa iluminação</p>
                     <img id="facial-preview" src="" class="hidden mt-3 mx-auto max-h-32 rounded-xl object-cover">
                 </div>
-                <input id="facial-input" type="file" accept="image/*" capture="user" class="hidden" onchange="previewSelfie(this)">
+                <input id="facial-input" type="file" accept="image/*" class="hidden" onchange="previewSelfie(this)">
             </label>
 
             <div id="facial-resultado" class="hidden mt-3 text-sm font-semibold text-center"></div>
