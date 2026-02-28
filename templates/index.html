@@ -25,6 +25,7 @@
     {% if capa_url %}<meta name="twitter:image" content="{{ capa_url }}">{% endif %}
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>if (localStorage.getItem('darkMode') === '1') document.documentElement.classList.add('dark');</script>
     <style>
         .btn-azul { background-color: #3b82f6; color: #fff; transition: all 0.2s; }
         .btn-azul:hover:not(:disabled) { background-color: #2563eb; transform: scale(1.02); }
@@ -54,6 +55,20 @@
         
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dark mode */
+        .dark body { background: #0f172a; color: #e2e8f0; }
+        .dark .bg-white { background: #1e293b !important; }
+        .dark .bg-gray-50 { background: #0f172a !important; }
+        .dark .text-gray-900 { color: #f1f5f9 !important; }
+        .dark .text-gray-700 { color: #cbd5e1 !important; }
+        .dark .text-gray-500 { color: #94a3b8 !important; }
+        .dark .text-gray-400 { color: #64748b !important; }
+        .dark .border-gray-200 { border-color: #334155 !important; }
+        .dark .border-gray-100 { border-color: #1e293b !important; }
+        .dark nav.bg-white { background: #1e293b !important; }
+        .dark .bg-blue-50 { background: #1e3a5f !important; }
+        .dark .bg-gray-800 { background: #0f172a !important; }
     </style>
 </head>
 <body oncontextmenu="return false;" class="bg-gray-50 text-gray-900 font-sans flex flex-col min-h-screen">
