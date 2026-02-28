@@ -22,8 +22,11 @@
     <meta property="og:url" content="https://yshpics.com">
     <meta name="twitter:card" content="summary_large_image">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=2000&auto=format&fit=crop" fetchpriority="high">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>if (localStorage.getItem('darkMode') === '1') document.documentElement.classList.add('dark');</script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -35,8 +38,11 @@
         }
         .hero-bg {
             position: absolute; inset: 0;
-            background-image: url('https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=2000&auto=format&fit=crop');
             background-size: cover; background-position: center; z-index: 1;
+            opacity: 0; transition: opacity 1.5s ease-in-out;
+        }
+        .hero-bg.active {
+            opacity: 1;
             animation: heroZoom 20s ease-in-out infinite alternate;
         }
         @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
@@ -203,19 +209,6 @@
         .faq-item details[open] .faq-icon { transform: rotate(45deg); }
         .faq-icon { transition: transform 0.2s; }
 
-        /* Dark mode */
-        .dark body { background: #0f172a; color: #e2e8f0; }
-        .dark .bg-white { background: #1e293b !important; }
-        .dark .bg-gray-50 { background: #0f172a !important; }
-        .dark .text-gray-900 { color: #f1f5f9 !important; }
-        .dark .text-gray-700 { color: #cbd5e1 !important; }
-        .dark .text-gray-500 { color: #94a3b8 !important; }
-        .dark .text-gray-400 { color: #64748b !important; }
-        .dark .border-gray-200 { border-color: #334155 !important; }
-        .dark .border-gray-100 { border-color: #1e293b !important; }
-        .dark nav.bg-white\/95 { background: rgba(15,23,42,0.95) !important; }
-        .dark .stats-strip { background: #1e293b; border-color: #334155; }
-        .dark .card-inner { background: #1e293b; border-color: #334155; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -284,16 +277,18 @@
                     Entrar
                 </a>
                 {% endif %}
-                <button id="btn-dark" onclick="toggleDarkMode()" class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" title="Modo escuro">
-                    <svg id="icon-dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
             </div>
         </div>
     </nav>
 
     <!-- Hero -->
     <section class="hero-container">
-        <div class="hero-bg"></div>
+        <div class="hero-bg active" style="background-image:url('https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=2000&auto=format&fit=crop')"></div>
+        <div class="hero-bg" data-bg="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2000&auto=format&fit=crop"></div>
+        <div class="hero-bg" data-bg="https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=2000&auto=format&fit=crop"></div>
+        <div class="hero-bg" data-bg="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=2000&auto=format&fit=crop"></div>
+        <div class="hero-bg" data-bg="https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2000&auto=format&fit=crop"></div>
+        <div class="hero-bg" data-bg="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=2000&auto=format&fit=crop"></div>
         <div class="hero-overlay"></div>
         <div class="hero-fade"></div>
         <div class="hero-content fade-in-up">
@@ -566,20 +561,54 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200">
-        <div class="max-w-7xl mx-auto py-7 px-4 sm:px-6 flex flex-col items-center gap-3 text-center">
-            <div class="flex items-center gap-4 text-xs text-gray-400">
-                <a href="#termos" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;" class="hover:text-blue-500 transition-colors">Termos de Uso</a>
-                <span>·</span>
-                <a href="#privacidade" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;" class="hover:text-blue-500 transition-colors">Política de Privacidade</a>
+    <footer class="bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+                <!-- Brand -->
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl font-black italic" style="letter-spacing:-0.04em;"><span class="text-white">ysh</span><span class="text-blue-400">pics</span></span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed max-w-xs">Cobertura fotográfica profissional de eventos. Encontre, escolha e baixe suas fotos com facilidade e segurança.</p>
+                    <div class="flex items-center gap-3 mt-6">
+                        <a href="https://instagram.com/yshpics" target="_blank" rel="noopener"
+                           class="w-9 h-9 rounded-full bg-white/10 hover:bg-blue-500 flex items-center justify-center transition-colors" title="Instagram">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        </a>
+                    </div>
+                </div>
+                <!-- Navigation -->
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-5">Navegação</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/" class="text-gray-300 hover:text-white transition-colors">Início</a></li>
+                        <li><a href="/cadastro" class="text-gray-300 hover:text-white transition-colors">Cadastro fotógrafo</a></li>
+                        <li><a href="/login" class="text-gray-300 hover:text-white transition-colors">Entrar</a></li>
+                    </ul>
+                </div>
+                <!-- Legal -->
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-5">Legal</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li>
+                            <a href="#termos" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;"
+                               class="text-gray-300 hover:text-white transition-colors">Termos de Uso</a>
+                        </li>
+                        <li>
+                            <a href="#privacidade" onclick="document.getElementById('modal-termos').classList.remove('hidden');document.getElementById('modal-termos').classList.add('flex');return false;"
+                               class="text-gray-300 hover:text-white transition-colors">Política de Privacidade</a>
+                        </li>
+                    </ul>
+                    <div class="mt-6 flex items-center gap-2 text-xs text-gray-500">
+                        <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Pagamentos processados pelo Mercado Pago</span>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-center gap-4">
-                <p class="text-gray-400 text-xs font-medium">© 2026 yshpics. Todos os direitos reservados.</p>
-                <a href="https://instagram.com/yshpics" target="_blank" rel="noopener"
-                   class="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors text-xs font-bold">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                    @yshpics
-                </a>
+            <!-- Bottom bar -->
+            <div class="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
+                <p>© 2026 yshpics. Todos os direitos reservados.</p>
+                <p>Feito com <span class="text-red-400">♥</span> para fotógrafos e clientes</p>
             </div>
         </div>
     </footer>
@@ -761,24 +790,29 @@
             navigator.serviceWorker.register('/static/sw.js').catch(() => {});
         }
 
-        // Dark mode
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', isDark ? '1' : '0');
-            updateDarkIcon(isDark);
-        }
-        function updateDarkIcon(isDark) {
-            const icon = document.getElementById('icon-dark');
-            if (isDark) {
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
-            } else {
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+        // Hero slideshow — lazy-loads each image on first use
+        (function() {
+            var slides = document.querySelectorAll('.hero-bg');
+            var cur = 0;
+            if (slides.length < 2) return;
+            function loadSlide(el) {
+                var bg = el.getAttribute('data-bg');
+                if (bg && !el.style.backgroundImage) {
+                    el.style.backgroundImage = "url('" + bg + "')";
+                }
             }
-        }
-        if (localStorage.getItem('darkMode') === '1') {
-            document.documentElement.classList.add('dark');
-            updateDarkIcon(true);
-        }
+            // Preload the second slide after page load
+            window.addEventListener('load', function() { loadSlide(slides[1]); });
+            setInterval(function() {
+                slides[cur].classList.remove('active');
+                cur = (cur + 1) % slides.length;
+                loadSlide(slides[cur]);
+                // Preload next in background
+                var next = (cur + 1) % slides.length;
+                loadSlide(slides[next]);
+                slides[cur].classList.add('active');
+            }, 6000);
+        })();
     </script>
 </body>
 </html>
